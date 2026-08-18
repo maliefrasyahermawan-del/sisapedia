@@ -10,12 +10,6 @@ class _InfoContent {
 }
 
 const _content = {
-  'panduan': _InfoContent(
-    'Panduan',
-    'Mulai dengan menyetor sampah organik atau anorganik lewat menu Beranda. '
-        'Kamu bisa mengisi manual atau memakai Setor Cerdas untuk mencatat via suara. '
-        'Setiap setoran yang diverifikasi mitra akan menambah Poin Sirkular kamu.',
-  ),
   'faq': _InfoContent(
     'Pertanyaan Umum',
     'Q: Berapa lama setoran diverifikasi?\n'

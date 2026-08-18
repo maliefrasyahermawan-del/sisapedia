@@ -20,6 +20,13 @@ class BottomNavScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: shell,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/sari-chat'),
+        backgroundColor: AppColors.textPrimary,
+        icon: const Icon(Icons.auto_awesome_rounded,
+            color: Colors.white, size: 18),
+        label: const Text('Sari', style: TextStyle(color: Colors.white)),
+      ),
       bottomNavigationBar: DecoratedBox(
         decoration: const BoxDecoration(
           color: AppColors.surface,

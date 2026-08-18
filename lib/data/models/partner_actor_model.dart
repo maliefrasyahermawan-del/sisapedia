@@ -31,6 +31,8 @@ class PartnerActorModel {
   final double kapasitasTersedia;
   final double kapasitasTotal;
   final List<String> kategoriDiterima;
+  final String kecamatan;
+  final String alamat;
 
   const PartnerActorModel({
     required this.id,
@@ -41,6 +43,8 @@ class PartnerActorModel {
     required this.kapasitasTersedia,
     required this.kapasitasTotal,
     this.kategoriDiterima = const [],
+    this.kecamatan = '',
+    this.alamat = '',
   });
 
   factory PartnerActorModel.fromMap(String id, Map<String, dynamic> map) {
@@ -56,6 +60,8 @@ class PartnerActorModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      kecamatan: map['kecamatan'] as String? ?? '',
+      alamat: map['alamat'] as String? ?? '',
     );
   }
 
@@ -68,6 +74,8 @@ class PartnerActorModel {
       'kapasitas_tersedia': kapasitasTersedia,
       'kapasitas_total': kapasitasTotal,
       'kategori_diterima': kategoriDiterima,
+      'kecamatan': kecamatan,
+      'alamat': alamat,
     };
   }
 }

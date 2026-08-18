@@ -3,14 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models/submission_model.dart';
+import '../../features/articles/article_detail_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/home/beranda_screen.dart';
 import '../../features/map/peta_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
+import '../../features/profile/panduan_screen.dart';
 import '../../features/profile/profil_screen.dart';
 import '../../features/profile/static_info_screen.dart';
+import '../../features/sari_chat/sari_chat_screen.dart';
 import '../../features/setor_manual/setor_form_screen.dart';
+import '../../features/wilayah/wilayah_pencocokan_screen.dart';
 import '../providers/repository_providers.dart';
 import '../../shared/widgets/bottom_nav_scaffold.dart';
 
@@ -57,8 +62,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profil/info/:slug',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          return StaticInfoScreen(slug: state.pathParameters['slug']!);
+          final slug = state.pathParameters['slug']!;
+          if (slug == 'panduan') return const PanduanScreen();
+          return StaticInfoScreen(slug: slug);
         },
+      ),
+      GoRoute(
+        path: '/wilayah-pencocokan',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const WilayahPencocokanScreen(),
+      ),
+      GoRoute(
+        path: '/sari-chat',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SariChatScreen(),
+      ),
+      GoRoute(
+        path: '/artikel/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          return ArticleDetailScreen(articleId: state.pathParameters['id']!);
+        },
+      ),
+      GoRoute(
+        path: '/notifikasi',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => BottomNavScaffold(shell: shell),

@@ -4,13 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/data_providers.dart';
+import '../../core/providers/notification_providers.dart';
 import '../../core/providers/repository_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../data/models/movement_event_model.dart';
 import '../../data/models/points_transaction_model.dart';
 import '../setor_cerdas/voice_modal.dart';
 import 'widgets/beranda_header.dart';
 import 'widgets/history_section.dart';
+import 'widgets/join_event_sheet.dart';
 import 'widgets/movement_section.dart';
 import 'widgets/points_card.dart';
 import 'widgets/redeem_article_section.dart';
@@ -91,6 +94,32 @@ class BerandaScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _handleJoinEvent(
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    String userName,
+    MovementEventModel event,
+  ) {
+    showJoinEventSheet(
+      context,
+      eventTitle: event.title,
+      organizer: event.organizer,
+      defaultName: userName,
+      onSubmit: (result) async {
+        await ref
+            .read(contentRepositoryProvider)
+            .joinEvent(eventId: event.id, uid: uid);
+        if (context.mounted) {
+          _showSnack(
+            context,
+            'Pendaftaran ke ${event.title} diajukan ke ${event.organizer}.',
+          );
+        }
+      },
     );
   }
 
@@ -177,6 +206,7 @@ class BerandaScreen extends ConsumerWidget {
     final profile = profileAsync.valueOrNull;
     final poin = profile?.poinSirkular ?? 0;
     final levelTitle = profile?.levelTitle ?? 'Pejuang Kota Sirkular';
+    final hasUnread = ref.watch(unreadNotificationsCountProvider) > 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -188,43 +218,46 @@ class BerandaScreen extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: BerandaHeader(profile: profile)),
+            SliverToBoxAdapter(
+              child: BerandaHeader(
+                profile: profile,
+                hasUnreadNotifications: hasUnread,
+              ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  Transform.translate(
-                    offset: const Offset(0, -24),
-                    child: PointsCard(
-                      poin: poin,
-                      onShare: () => showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Bagikan Poin Sirkular'),
-                          content: Text(
-                            'Aku sudah kumpulkan ${NumberFormat.decimalPattern('id_ID').format(poin)} '
-                            'Poin Sirkular di SisaPedia! Yuk kelola sampah bareng.',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Tutup'),
-                            ),
-                          ],
+                  const SizedBox(height: 16),
+                  PointsCard(
+                    poin: poin,
+                    onShare: () => showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Bagikan Poin Sirkular'),
+                        content: Text(
+                          'Aku sudah kumpulkan ${NumberFormat.decimalPattern('id_ID').format(poin)} '
+                          'Poin Sirkular di SisaPedia! Yuk kelola sampah bareng.',
                         ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Tutup'),
+                          ),
+                        ],
                       ),
-                      onTukar: () =>
-                          _openRedeemSheet(context, ref, uid, poin),
-                      onLihatRiwayat: () => _openRiwayatPoinSheet(
-                          context, ref, uid, levelTitle),
                     ),
+                    onTukar: () => _openRedeemSheet(context, ref, uid, poin),
+                    onLihatRiwayat: () =>
+                        _openRiwayatPoinSheet(context, ref, uid, levelTitle),
                   ),
                   const SizedBox(height: 4),
                   SetorActionsSection(
                     onSetorCerdas: () => showVoiceModal(context, ref, uid),
                     onSetorOrganik: () => context.push('/setor/organik'),
                     onSetorAnorganik: () => context.push('/setor/anorganik'),
-                    onWilayahPencocokan: () => context.go('/peta'),
+                    onWilayahPencocokan: () =>
+                        context.push('/wilayah-pencocokan'),
                   ),
                   const SizedBox(height: 24),
                   RedeemArticleSection(
@@ -233,14 +266,13 @@ class BerandaScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
                   MovementSection(
-                    onJoin: (eventId, title) async {
-                      await ref
-                          .read(contentRepositoryProvider)
-                          .joinEvent(eventId: eventId, uid: uid);
-                      if (context.mounted) {
-                        _showSnack(context, 'Berhasil gabung ke $title');
-                      }
-                    },
+                    onJoin: (event) => _handleJoinEvent(
+                      context,
+                      ref,
+                      uid,
+                      profile?.name ?? '',
+                      event,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   HistorySection(uid: uid),

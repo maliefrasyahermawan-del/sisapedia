@@ -133,6 +133,35 @@ final _sampleSubmissions = <SubmissionModel>[
     status: SubmissionStatus.verified,
     createdAt: _daysAgo(118),
   ),
+  // Submissions from other warga across Kota Semarang, so the "Kota
+  // Semarang" dashboard scope (all verified submissions) reads visibly
+  // larger and trends differently than the "Saya" scope (previewUid only).
+  ...List.generate(42, (i) {
+    final isOrganik = i % 3 != 0;
+    final daysBack = (i * 4) % 175;
+    return SubmissionModel(
+      id: 'city-$i',
+      uid: 'warga-${i % 9}',
+      kategori: isOrganik ? WasteCategory.organik : WasteCategory.anorganik,
+      subtipe: isOrganik
+          ? const [
+              'Sisa Sayur & Buah',
+              'Sampah Organik Dapur',
+              'Ampas Kopi',
+              'Sisa Makanan',
+            ][i % 4]
+          : const [
+              'Botol Plastik PET',
+              'Kardus & Kertas',
+              'Logam & Kaleng',
+            ][i % 3],
+      beratKg: 1.5 + (i % 6) * 0.9,
+      partnerId: isOrganik ? 'p1' : 'p3',
+      partnerName: isOrganik ? 'Bank Sampah Melati Bersih' : 'Pengepul Jaya',
+      status: SubmissionStatus.verified,
+      createdAt: _daysAgo(daysBack),
+    );
+  }),
 ];
 
 final _samplePartners = <PartnerActorModel>[
@@ -145,6 +174,8 @@ final _samplePartners = <PartnerActorModel>[
     kapasitasTersedia: 120,
     kapasitasTotal: 150,
     kategoriDiterima: ['Organik', 'Kertas', 'Plastik'],
+    kecamatan: 'Tembalang',
+    alamat: 'Jl. Sirojudin No. 8, Tembalang',
   ),
   const PartnerActorModel(
     id: 'p2',
@@ -155,6 +186,8 @@ final _samplePartners = <PartnerActorModel>[
     kapasitasTersedia: 80,
     kapasitasTotal: 100,
     kategoriDiterima: ['Organik'],
+    kecamatan: 'Tembalang',
+    alamat: 'Jl. Ngresep Timur V, Tembalang',
   ),
   const PartnerActorModel(
     id: 'p3',
@@ -165,6 +198,8 @@ final _samplePartners = <PartnerActorModel>[
     kapasitasTersedia: 200,
     kapasitasTotal: 300,
     kategoriDiterima: ['Plastik', 'Logam', 'Kertas'],
+    kecamatan: 'Semarang Selatan',
+    alamat: 'Jl. MT Haryono No. 45, Semarang Selatan',
   ),
   const PartnerActorModel(
     id: 'p4',
@@ -175,6 +210,32 @@ final _samplePartners = <PartnerActorModel>[
     kapasitasTersedia: 60,
     kapasitasTotal: 100,
     kategoriDiterima: ['Organik'],
+    kecamatan: 'Semarang Tengah',
+    alamat: 'Jl. Pandanaran No. 12, Semarang Tengah',
+  ),
+  const PartnerActorModel(
+    id: 'p5',
+    nama: 'Bank Sampah Sejahtera',
+    tipe: PartnerType.bankSampah,
+    lat: -6.9847,
+    lng: 110.4108,
+    kapasitasTersedia: 90,
+    kapasitasTotal: 120,
+    kategoriDiterima: ['Organik', 'Plastik'],
+    kecamatan: 'Semarang Tengah',
+    alamat: 'Jl. Gajahmada No. 21, Semarang Tengah',
+  ),
+  const PartnerActorModel(
+    id: 'p6',
+    nama: 'Pengepul Makmur Logam',
+    tipe: PartnerType.pengepul,
+    lat: -7.0102,
+    lng: 110.4210,
+    kapasitasTersedia: 150,
+    kapasitasTotal: 250,
+    kategoriDiterima: ['Logam', 'Plastik'],
+    kecamatan: 'Semarang Selatan',
+    alamat: 'Jl. Sompok Baru No. 6, Semarang Selatan',
   ),
 ];
 
@@ -185,6 +246,18 @@ final _sampleArticles = <ArticleModel>[
     summary:
         'Sampah plastik selalu jadi masalah utama pencemaran lingkungan yang butuh ratusan tahun untuk terurai...',
     readTimeMinutes: 5,
+    content:
+        'Sampah plastik selalu jadi masalah utama pencemaran lingkungan yang butuh ratusan tahun untuk terurai. '
+        'Sebagian besar kemasan sekali pakai, seperti kantong belanja, sedotan, dan botol minuman, hanya '
+        'dipakai dalam hitungan menit namun tetap ada di lingkungan selama puluhan bahkan ratusan tahun setelahnya.\n\n'
+        'Di Indonesia, plastik menyumbang lebih dari seperlima total timbulan sampah nasional. Ketika tidak '
+        'dipilah dari sumbernya, plastik bercampur dengan sampah organik dan berakhir di TPA, atau lebih buruk '
+        'lagi mencemari sungai dan laut. Padahal jenis seperti botol PET, kemasan HDPE, dan kardus punya nilai '
+        'jual dan bisa didaur ulang berulang kali kalau dipilah dalam kondisi bersih dan kering.\n\n'
+        'Langkah paling sederhana yang bisa kamu mulai hari ini: pisahkan plastik bersih dari sampah dapur '
+        'sejak di rumah, bilas kemasan bekas makanan sebelum disetor, dan gunakan menu Setor Anorganik di '
+        'SisaPedia supaya plastikmu langsung tersambung ke pengepul atau industri daur ulang terdekat, bukan '
+        'berakhir tercampur di TPA.',
   ),
   const ArticleModel(
     id: 'a2',
@@ -192,6 +265,19 @@ final _sampleArticles = <ArticleModel>[
     summary:
         'Tahukah kamu 1/3 dari makanan yang diproduksi berakhir jadi sampah? Yuk kurangi mulai dari dapur sendiri.',
     readTimeMinutes: 4,
+    content:
+        'Tahukah kamu sekitar sepertiga dari seluruh makanan yang diproduksi di dunia berakhir jadi sampah '
+        'sebelum sempat dimakan? Ada dua istilah yang sering tertukar: food loss, makanan yang hilang di '
+        'rantai produksi dan distribusi sebelum sampai ke konsumen, dan food waste, makanan layak yang '
+        'akhirnya dibuang di tingkat rumah tangga, restoran, atau ritel.\n\n'
+        'Rumah tangga adalah penyumbang terbesar food waste di banyak kota, termasuk di Indonesia. Sisa nasi, '
+        'sayur yang layu, dan buah yang terlanjur busuk sebelum dimasak semuanya masuk kategori ini. Ketika '
+        'dibuang begitu saja ke TPA, sisa makanan ini membusuk tanpa oksigen dan menghasilkan gas metana, '
+        'salah satu gas rumah kaca yang jauh lebih kuat dampaknya dibanding karbon dioksida.\n\n'
+        'Cara paling mudah menguranginya mulai dari dapur sendiri, rencanakan belanja sesuai kebutuhan, '
+        'simpan sisa makanan dengan benar, dan olah sisa sayur/buah yang masih layak jadi kompos atau pakan '
+        'maggot BSF lewat menu Setor Organik. Setiap kilogram yang kamu setor lewat SisaPedia langsung '
+        'dihitung sebagai sampah yang berhasil dialihkan dari TPA di dasbor dampakmu.',
   ),
   const ArticleModel(
     id: 'a3',
@@ -199,6 +285,19 @@ final _sampleArticles = <ArticleModel>[
     summary:
         'Memilah sampah dapur ternyata gampang kalau tahu caranya. Ini 5 langkah praktis buat mulai hari ini.',
     readTimeMinutes: 4,
+    content:
+        'Memilah sampah dapur ternyata gampang kalau tahu caranya. Berikut 5 langkah praktis buat mulai hari ini.\n\n'
+        '1. Siapkan dua wadah terpisah di dapur, satu untuk sisa organik (sayur, buah, ampas kopi, nasi), '
+        'satu lagi untuk anorganik bersih (plastik, kertas, logam).\n\n'
+        '2. Bilas kemasan plastik dan kaleng sebelum dibuang ke wadah anorganik, sisa makanan yang menempel '
+        'membuat plastik sulit didaur ulang dan mengundang bau.\n\n'
+        '3. Jangan campur minyak jelantah dengan sampah dapur biasa, kumpulkan terpisah di botol bekas '
+        'karena minyak butuh jalur pengolahan sendiri.\n\n'
+        '4. Padatkan volume kardus dan kemasan sebelum disetor supaya lebih ringkas dibawa dan lebih mudah '
+        'ditimbang oleh mitra pengepul.\n\n'
+        '5. Setor rutin lewat SisaPedia, baik manual maupun lewat Setor Cerdas dengan asisten Sari yang '
+        'tinggal kamu ajak bicara. Konsistensi memilah setiap hari jauh lebih berdampak daripada sekali '
+        'besar tapi jarang.',
   ),
 ];
 
@@ -376,6 +475,34 @@ class FakeGroqService extends GroqService {
     await Future.delayed(const Duration(milliseconds: 400));
     return 'Setoran organikmu naik dibanding bulan lalu, didorong oleh sisa sayur & buah. '
         'Coba setor ampas kopi juga, poin bonusnya sedang tinggi minggu ini.';
+  }
+
+  @override
+  Future<String> chat(List<Map<String, String>> history) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    final lastUser = history.isNotEmpty ? history.last['content'] ?? '' : '';
+    final q = lastUser.toLowerCase();
+
+    if (q.contains('poin sirkular') || q.contains('poin')) {
+      return 'Poin Sirkular adalah reward yang kamu dapat tiap kali menyetor sampah '
+          'organik atau anorganik. Poinmu saat ini ${_fakeUser.poinSirkular}, bisa '
+          'ditukar jadi voucher atau donasi lingkungan.';
+    }
+    if (q.contains('jadwal') || q.contains('jemput')) {
+      return 'Jadwal jemput mengikuti mitra terdekat di wilayahmu, cek lewat menu '
+          'Wilayah Pencocokan di Beranda untuk lihat lokasi dan slot yang tersedia.';
+    }
+    if (q.contains('setor') || q.contains('sampah')) {
+      return 'Kamu bisa setor lewat Setor Cerdas (cukup ngomong ke aku) atau Setor '
+          'Manual di Beranda, pilih kategori Organik atau Anorganik sesuai jenis '
+          'sampahmu.';
+    }
+    if (q.contains('halo') || q.contains('hai') || q.isEmpty) {
+      return 'Hai! Aku Sari, asisten sirkularmu di SisaPedia. Ada yang bisa kubantu '
+          'soal poin, setoran, atau jadwal jemput?';
+    }
+    return 'Aku bisa bantu soal Poin Sirkular, cara setor sampah, atau jadwal '
+        'jemput mitra terdekat. Coba tanya salah satu topik itu ya.';
   }
 }
 

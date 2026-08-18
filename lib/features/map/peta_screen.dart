@@ -7,10 +7,15 @@ import '../../core/providers/data_providers.dart';
 import '../../core/providers/repository_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../data/geo/semarang_boundary.dart';
 import '../../data/models/partner_actor_model.dart';
 import 'actor_detail_sheet.dart';
 
 const _semarangCenter = LatLng(-6.9932, 110.4203);
+
+final _semarangBoundaryPoints = [
+  for (final p in semarangBoundaryLatLng) LatLng(p[0], p[1]),
+];
 
 Color _colorFor(PartnerType type) {
   switch (type) {
@@ -111,6 +116,16 @@ class _PetaScreenState extends ConsumerState<PetaScreen> {
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.sisapedia.app',
+                    ),
+                    PolygonLayer(
+                      polygons: [
+                        Polygon(
+                          points: _semarangBoundaryPoints,
+                          color: Colors.transparent,
+                          borderColor: const Color(0xFFDC2626),
+                          borderStrokeWidth: 2.5,
+                        ),
+                      ],
                     ),
                     MarkerLayer(
                       markers: [

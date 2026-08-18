@@ -5,13 +5,14 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/data_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../data/models/movement_event_model.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/section_header.dart';
 
 class MovementSection extends ConsumerWidget {
   const MovementSection({super.key, required this.onJoin});
 
-  final void Function(String eventId, String title) onJoin;
+  final void Function(MovementEventModel event) onJoin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -56,7 +57,7 @@ class MovementSection extends ConsumerWidget {
                           ),
                         ),
                         OutlinedButton(
-                          onPressed: () => onJoin(event.id, event.title),
+                          onPressed: () => onJoin(event),
                           child: const Text('Gabung'),
                         ),
                       ],

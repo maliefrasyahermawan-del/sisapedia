@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers/data_providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -52,6 +53,7 @@ class RedeemArticleSection extends ConsumerWidget {
                   _ArticleCard(
                     title: article.title,
                     summary: article.summary,
+                    onTap: () => context.push('/artikel/${article.id}'),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -131,14 +133,20 @@ class _RedeemCard extends StatelessWidget {
 }
 
 class _ArticleCard extends StatelessWidget {
-  const _ArticleCard({required this.title, required this.summary});
+  const _ArticleCard({
+    required this.title,
+    required this.summary,
+    required this.onTap,
+  });
 
   final String title;
   final String summary;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
