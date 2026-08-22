@@ -8,6 +8,11 @@ class AppColors {
   static const Color primaryDark = Color(0xFF0B7D57);
   static const Color primaryLight = Color(0xFFE3F5EE);
 
+  static const Color accent700 = Color(0xFF007A3B);
+  static const Color accent800 = Color(0xFF00572A);
+  static const Color accent900 = Color(0xFF00341A);
+  static const Color levelBadge = Color(0xFFFFD166);
+
   static const Color background = Color(0xFFF7F9F8);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color border = Color(0xFFE5E7EB);

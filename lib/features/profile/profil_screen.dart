@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers/repository_providers.dart';
+import '../../core/session/session_mode.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_card.dart';
@@ -39,7 +40,11 @@ class ProfilScreen extends ConsumerWidget {
       ),
     );
     if (confirmed == true) {
-      await ref.read(authControllerProvider.notifier).signOut();
+      final mode = ref.read(sessionModeProvider);
+      if (mode == SessionMode.normal) {
+        await ref.read(authControllerProvider.notifier).signOut();
+      }
+      ref.read(sessionModeProvider.notifier).state = SessionMode.normal;
     }
   }
 

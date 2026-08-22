@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/notification_providers.dart';
 import '../../core/providers/repository_providers.dart';
+import '../../core/session/session_mode.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/movement_event_model.dart';
-import '../../data/models/points_transaction_model.dart';
-import '../setor_cerdas/voice_modal.dart';
 import 'widgets/beranda_header.dart';
 import 'widgets/history_section.dart';
 import 'widgets/join_event_sheet.dart';
@@ -123,81 +121,12 @@ class BerandaScreen extends ConsumerWidget {
     );
   }
 
-  void _openRiwayatPoinSheet(BuildContext context, WidgetRef ref, String uid,
-      String levelTitle) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) {
-          final txAsync = ref.watch(userPointsTransactionsProvider(uid));
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(levelTitle, style: AppTextStyles.h2),
-                const SizedBox(height: 4),
-                Text('Riwayat poin sirkular kamu', style: AppTextStyles.captionMuted),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: txAsync.when(
-                    data: (txs) {
-                      if (txs.isEmpty) {
-                        return Center(
-                          child: Text('Belum ada riwayat poin.',
-                              style: AppTextStyles.captionMuted),
-                        );
-                      }
-                      return ListView.separated(
-                        controller: scrollController,
-                        itemCount: txs.length,
-                        separatorBuilder: (_, _) => const Divider(),
-                        itemBuilder: (context, i) {
-                          final tx = txs[i];
-                          final isEarn =
-                              tx.jenis == PointsTransactionType.earn;
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(tx.deskripsi),
-                            subtitle: Text(tx.status.label),
-                            trailing: Text(
-                              '${isEarn ? '+' : '-'}${tx.jumlah}',
-                              style: AppTextStyles.bodyBold.copyWith(
-                                color: isEarn
-                                    ? AppColors.success
-                                    : AppColors.textSecondary,
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (_, _) => Center(
-                        child: Text('Gagal memuat riwayat.',
-                            style: AppTextStyles.captionMuted)),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(userProfileProvider);
-    final uid = ref.watch(currentUidProvider).valueOrNull;
+    final isGuest = ref.watch(sessionModeProvider) == SessionMode.guest;
+    final uid =
+        ref.watch(currentUidProvider).valueOrNull ?? (isGuest ? kGuestUid : null);
 
     if (uid == null || profileAsync.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -205,7 +134,6 @@ class BerandaScreen extends ConsumerWidget {
 
     final profile = profileAsync.valueOrNull;
     final poin = profile?.poinSirkular ?? 0;
-    final levelTitle = profile?.levelTitle ?? 'Pejuang Kota Sirkular';
     final hasUnread = ref.watch(unreadNotificationsCountProvider) > 0;
 
     return Scaffold(
@@ -224,36 +152,24 @@ class BerandaScreen extends ConsumerWidget {
                 hasUnreadNotifications: hasUnread,
               ),
             ),
+            SliverToBoxAdapter(
+              child: Transform.translate(
+                offset: const Offset(0, -28),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: PointsCard(
+                    poin: poin,
+                    onTukar: () => _openRedeemSheet(context, ref, uid, poin),
+                    onLihatRiwayat: () => context.push('/level-sirkular'),
+                  ),
+                ),
+              ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 16),
-                  PointsCard(
-                    poin: poin,
-                    onShare: () => showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Bagikan Poin Sirkular'),
-                        content: Text(
-                          'Aku sudah kumpulkan ${NumberFormat.decimalPattern('id_ID').format(poin)} '
-                          'Poin Sirkular di SisaPedia! Yuk kelola sampah bareng.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Tutup'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    onTukar: () => _openRedeemSheet(context, ref, uid, poin),
-                    onLihatRiwayat: () =>
-                        _openRiwayatPoinSheet(context, ref, uid, levelTitle),
-                  ),
-                  const SizedBox(height: 4),
                   SetorActionsSection(
-                    onSetorCerdas: () => showVoiceModal(context, ref, uid),
                     onSetorOrganik: () => context.push('/setor/organik'),
                     onSetorAnorganik: () => context.push('/setor/anorganik'),
                     onWilayahPencocokan: () =>

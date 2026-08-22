@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/repository_providers.dart';
+import '../../core/session/guest_gate.dart';
+import '../../core/session/session_mode.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/partner_actor_model.dart';
@@ -56,25 +59,28 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
       }
       return;
     }
+    if (ref.read(sessionModeProvider) == SessionMode.guest) {
+      await showGuestRegisterGate(context);
+      return;
+    }
+
     final uid = ref.read(currentUidProvider).valueOrNull;
     if (uid == null) return;
 
     setState(() => _submitting = true);
     try {
-      await ref.read(submissionRepositoryProvider).create(SubmissionModel(
-            id: '',
-            uid: uid,
-            kategori: widget.kategori,
-            subtipe: _subtipe!,
-            beratKg: double.parse(_beratController.text.replaceAll(',', '.')),
-            partnerId: _partner?.id,
-            partnerName: _partner?.nama,
-          ));
+      final submission = SubmissionModel(
+        id: '',
+        uid: uid,
+        kategori: widget.kategori,
+        subtipe: _subtipe!,
+        beratKg: double.parse(_beratController.text.replaceAll(',', '.')),
+        partnerId: _partner?.id,
+        partnerName: _partner?.nama,
+      );
+      await ref.read(submissionRepositoryProvider).create(submission);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Setoran berhasil diajukan.')),
-        );
-        Navigator.of(context).pop();
+        context.pushReplacement('/setor/sukses', extra: submission);
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

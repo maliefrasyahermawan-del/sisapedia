@@ -7,13 +7,11 @@ import '../../../shared/widgets/app_card.dart';
 class SetorActionsSection extends StatelessWidget {
   const SetorActionsSection({
     super.key,
-    required this.onSetorCerdas,
     required this.onSetorOrganik,
     required this.onSetorAnorganik,
     required this.onWilayahPencocokan,
   });
 
-  final VoidCallback onSetorCerdas;
   final VoidCallback onSetorOrganik;
   final VoidCallback onSetorAnorganik;
   final VoidCallback onWilayahPencocokan;
@@ -23,36 +21,6 @@ class SetorActionsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppCard(
-          onTap: onSetorCerdas,
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.mic_rounded, color: AppColors.primary),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Setor Cerdas', style: AppTextStyles.h3),
-                    const SizedBox(height: 2),
-                    Text('Cukup bicara, Sari catat otomatis',
-                        style: AppTextStyles.captionMuted),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
