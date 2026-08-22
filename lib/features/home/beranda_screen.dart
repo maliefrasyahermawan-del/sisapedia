@@ -147,26 +147,28 @@ class BerandaScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: BerandaHeader(
-                profile: profile,
-                hasUnreadNotifications: hasUnread,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: const Offset(0, -28),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: PointsCard(
-                    poin: poin,
-                    onTukar: () => _openRedeemSheet(context, ref, uid, poin),
-                    onLihatRiwayat: () => context.push('/level-sirkular'),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  BerandaHeader(
+                    profile: profile,
+                    hasUnreadNotifications: hasUnread,
                   ),
-                ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: -60,
+                    child: PointsCard(
+                      poin: poin,
+                      onTukar: () => _openRedeemSheet(context, ref, uid, poin),
+                      onLihatRiwayat: () => context.push('/level-sirkular'),
+                    ),
+                  ),
+                ],
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 68, 16, 24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   SetorActionsSection(

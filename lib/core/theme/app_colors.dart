@@ -28,4 +28,9 @@ class AppColors {
 
   static const Color organik = Color(0xFF0E9F6E);
   static const Color anorganik = Color(0xFF2563EB);
+
+  static const Color organikSoft = Color(0xFFDDF3E7);
+  static const Color anorganikSoft = Color(0xFFDCE8FD);
+  static const Color wilayah = Color(0xFFC2691D);
+  static const Color wilayahSoft = Color(0xFFFBE9D2);
 }
