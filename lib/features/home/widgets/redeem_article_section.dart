@@ -65,7 +65,7 @@ class RedeemArticleSection extends ConsumerWidget {
         ),
         Center(
           child: TextButton(
-            onPressed: () {},
+            onPressed: () => context.push('/artikel'),
             child: const Text('Lihat Lainnya'),
           ),
         ),
