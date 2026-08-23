@@ -59,7 +59,7 @@ class BerandaHeader extends StatelessWidget {
             SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 56),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

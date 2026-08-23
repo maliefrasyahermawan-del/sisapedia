@@ -55,3 +55,4 @@ android/*.keystore
 .claude/
 # Supabase local CLI cache; never commit generated state.
 supabase/.temp/
+supabase/.branches/

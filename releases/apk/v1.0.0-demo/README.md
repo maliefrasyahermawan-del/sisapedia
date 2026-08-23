@@ -3,7 +3,7 @@
 Release APK untuk demo juri dengan Preview Mode dan Sari OmniRoute live-first.
 
 - File: `SisaPedia-v1.0.0-demo.apk`
-- SHA-256: `D1AD0FB998E5BD9AFEDAC13CC0BC13BCB4A4B03FB3D4EA2C8311F94CBEABC639`
+- SHA-256: `608ACE45A205D17FA1FD7C824D00E0D9BB905A6E86DC6E16E82E083602D062E6`
 - Package: `com.sisapedia.sisapedia`
 - Signing: APK Signature Scheme v2
 - Preview OTP: `246810`
