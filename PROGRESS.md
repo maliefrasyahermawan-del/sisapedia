@@ -25,6 +25,12 @@ reacts through repository streams, and seeds deterministic Semarang identities
   signing environment variables are present; no keystore is tracked.
 - Upstream UI patch `585e746` is included: points-card overlap fix, distinct
   category-card colors, SisaPedia display name, and refreshed Android/iOS icon.
+- Full article browsing is wired from “Lihat Lainnya” to provider-backed list
+  and detail screens.
+- Authentication UX includes Supabase password-reset requests and a validated
+  two-stage Indonesian phone OTP flow; Preview OTP remains `246810`.
+- Pengolah weighing evidence supports both gallery photos and the bundled demo
+  sample, with visible selected-file feedback.
 
 ## Verification
 
@@ -37,7 +43,7 @@ From the repository root:
 & C:\Ez\Tools\flutter\bin\flutter.bat build apk --debug --dart-define=PREVIEW_MODE=true
 ```
 
-The current Flutter test suite contains 44 passing tests covering matching,
+The current Flutter test suite contains 50 passing tests covering matching,
 lifecycle, organic/inorganic end-to-end Preview flows, role authorization,
 persistence, reactivity, per-submission candidate IDs/fallback, content
 moderation, Sari-to-manual prefill, OmniRoute JSON/SSE parsing and fallback,
@@ -48,10 +54,10 @@ schema assertions, including destructive-privilege denial, scoped source
 evidence upload/read, and retention outbox contracts. Release signing setup is
 documented in README.md; no keystore is tracked.
 
-The jury Preview release was rebuilt after the upstream icon/UI merge at
-57.3 MB, passed `flutter analyze`, and passed all 44 Flutter tests. The Kotlin
-Gradle Plugin warning from `speech_to_text` is non-fatal for the current demo
-build.
+The jury Preview release is rebuilt and smoke-tested after every feature batch.
+Version `1.0.1+2` passed `flutter analyze` and all 50 Flutter tests before APK
+packaging. The Kotlin Gradle Plugin warning from `speech_to_text` is non-fatal
+for the current demo build.
 
 ## Configuration and operations
 
