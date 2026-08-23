@@ -10,6 +10,7 @@ abstract class AuthRepositoryBase {
     String role = 'sumber',
   });
   Future<void> signIn({required String email, required String password});
+  Future<void> resetPasswordForEmail(String email);
   Future<void> signOut();
   Stream<UserModel?> watchProfile(String uid);
   Future<UserModel?> getProfile(String uid);
@@ -62,6 +63,15 @@ class AuthRepository implements AuthRepositoryBase {
   @override
   Future<void> signIn({required String email, required String password}) async {
     await _required.auth.signInWithPassword(email: email, password: password);
+  }
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty) {
+      throw const FormatException('Email wajib diisi');
+    }
+    await _required.auth.resetPasswordForEmail(normalizedEmail);
   }
 
   @override

@@ -357,6 +357,7 @@ final _samplePointsTransactions = <PointsTransactionModel>[
 
 class FakeAuthRepository implements AuthRepositoryBase {
   String? _otpPhone;
+  String? lastPasswordResetEmail;
   @override
   Stream<String?> get uidChanges => Stream.value(_previewUid);
 
@@ -376,6 +377,15 @@ class FakeAuthRepository implements AuthRepositoryBase {
     required String email,
     required String password,
   }) async {}
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty) {
+      throw const FormatException('Email wajib diisi.');
+    }
+    lastPasswordResetEmail = normalizedEmail;
+  }
 
   @override
   Future<void> signOut() async {}

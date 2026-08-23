@@ -112,10 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () =>
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Segera hadir.')),
-                              ),
+                          onPressed: _forgotPassword,
                           child: const Text('Lupa kata sandi?'),
                         ),
                       ),
@@ -275,6 +272,123 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     phone.dispose();
     token.dispose();
+  }
+
+  Future<void> _forgotPassword() async {
+    final requested = await showDialog<bool>(
+      context: context,
+      builder: (_) =>
+          _ResetPasswordDialog(initialEmail: _emailController.text.trim()),
+    );
+    if (requested == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Jika akun dengan email tersebut ada, tautan reset kata sandi akan dikirim.',
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class _ResetPasswordDialog extends ConsumerStatefulWidget {
+  const _ResetPasswordDialog({required this.initialEmail});
+
+  final String initialEmail;
+
+  @override
+  ConsumerState<_ResetPasswordDialog> createState() =>
+      _ResetPasswordDialogState();
+}
+
+class _ResetPasswordDialogState extends ConsumerState<_ResetPasswordDialog> {
+  late final TextEditingController _emailController;
+  final _formKey = GlobalKey<FormState>();
+  String? _error;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate() || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .resetPasswordForEmail(_emailController.text.trim());
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error =
+              'Permintaan belum dapat diproses. Periksa koneksi lalu coba lagi.';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reset kata sandi'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Masukkan emailmu. Jika akun dengan email tersebut ada, kami akan mengirimkan tautan reset.',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Email'),
+              validator: (value) => value == null || !value.contains('@')
+                  ? 'Masukkan email yang valid'
+                  : null,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: const TextStyle(color: AppColors.error)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: const Text('Batal'),
+        ),
+        FilledButton(
+          onPressed: _loading ? null : _submit,
+          child: _loading
+              ? const SizedBox(
+                  height: 18,
+                  width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Kirim tautan'),
+        ),
+      ],
+    );
   }
 }
 
