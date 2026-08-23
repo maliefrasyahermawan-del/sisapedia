@@ -2,7 +2,8 @@
 
 > Dokumen ini dibaca dulu di sesi baru sebelum menyentuh kode. Isinya: cara
 > build/extract APK, peta file penting, keputusan desain sesi ini, dan config
-> yang perlu disiapkan manual. Update terakhir: **23 Agustus 2026**.
+> yang perlu disiapkan manual. Update terakhir: **23 Agustus 2026** (sore,
+> setelah cherry-pick dari branch `dev` — lihat Bagian 4e).
 
 ## 1. Status singkat
 
@@ -44,8 +45,8 @@ Hasil APK selalu di path yang sama (build ulang menimpa file lama):
 build\app\outputs\flutter-apk\app-release.apk
 ```
 
-Build terakhir (23 Agustus 2026, mode normal/non-preview, setelah patch
-logo asli + redesign Jenis Sampah): **56.2MB**, berhasil, `flutter analyze`
+Build terakhir (23 Agustus 2026 sore, setelah cherry-pick font Red Hat +
+layar Semua Artikel dari `dev`): **56.1MB**, berhasil, `flutter analyze`
 bersih (0 issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin
 (`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan untuk
 saat ini.
@@ -266,6 +267,44 @@ Dua hal dari feedback user setelah lihat APK patch 4c:
   di file yang sama) — kalau nanti nambah subtipe baru, jangan lupa
   tambahin entry ikonnya juga di situ.
 
+## 4e. Cherry-pick dari branch `dev` (23 Agustus 2026, sore)
+
+Orang lain (bukan sesi ini) push ke branch `dev` di remote GitHub yang sama
+(`origin/dev`, author `ezaarp <andrariezarizqip@gmail.com>`, 7 commit tgl 23
+Agustus 19:37–20:20) — isinya jauh lebih besar dari `master`: ganti backend
+total dari **Firebase ke Supabase**, tambah role Pengolah/DLH-Admin penuh,
+OTP telepon, reset password, matching engine, dan testsuite besar. Setelah
+dikonfirmasi ke user, **diputuskan TIDAK full-merge** — `master` tetap
+Firebase, tetap fase 1 Sumber-only. Yang diambil cuma bagian yang
+benar-benar backend-agnostic dan aman berdiri sendiri:
+
+- **Font Red Hat asli** (`assets/fonts/RedHatDisplay[wght].ttf`,
+  `RedHatText[wght].ttf` + lisensi OFL) menggantikan Google Fonts Manrope di
+  `app_text_styles.dart`/`app_theme.dart`. Ini justru menyamakan font app
+  dengan token asli di file referensi HTML (`--font:'Red Hat Text'`,
+  `--font-display:'Red Hat Display'`) yang jadi acuan redesign sesi-sesi
+  sebelumnya — dependency `google_fonts` sudah dihapus total dari
+  `pubspec.yaml` (tidak dipakai lagi di mana pun).
+- **`lib/features/articles/article_list_screen.dart`** (BARU) — layar
+  "Semua Artikel" (list lengkap, bukan cuma 3 teratas). Tombol "Lihat
+  Lainnya" di `redeem_article_section.dart` sebelumnya `onPressed: () {}`
+  (dead button, bug lama yang belum ketahuan) — sekarang beneran navigasi
+  ke `/artikel` (route baru di `app_router.dart`).
+
+Yang **SENGAJA TIDAK** diambil (backend-coupled ke Supabase atau ekspansi
+scope role Pengolah/DLH di luar fase 1): `supabase_flutter` + seluruh
+`supabase/` (migrations/RLS/Edge Functions), `lib/features/roles/*.dart`
+(role shell + layar Pengolah/DLH/Admin), OTP telepon & reset password
+(nempel ke Supabase Auth API, bukan portable ke Firebase Auth begitu saja),
+`matching_engine.dart`/`lifecycle_rules.dart` (bergantung ke field
+`PartnerActorModel`/`SubmissionStatus` yang diperluas, yang cuma dipakai
+alur matching admin/Pengolah), `points_rules.dart` (formula poinnya sama
+persis dengan yang sudah dipakai `setor_success_screen.dart`, tapi skema
+level bertingkat nama-nya beda paradigma dari ring "LV. n" yang sudah
+disetujui user — kalau diadopsi malah mundur dari desain yang sudah oke),
+dan `releases/apk/*.apk` (APK yang mereka commit langsung ke git, bukan
+gaya project ini).
+
 ## 5. Yang BELUM dikerjakan / diketahui terbatas
 
 - Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
@@ -293,6 +332,12 @@ Dua hal dari feedback user setelah lihat APK patch 4c:
 - Akun "Tamu" & "Akun Testing" cuma state lokal di memori (`sessionModeProvider`),
   reset otomatis ke `normal` tiap kali tombol "Keluar" di Profil ditekan atau
   app di-restart — belum ada persist ke local storage.
+- Ada branch `origin/dev` di remote yang sama isinya rombakan besar (backend
+  Supabase, role Pengolah/DLH-Admin, dst — lihat Bagian 4e) dari orang lain
+  di luar sesi-sesi Claude ini. `master` sudah cherry-pick bagian amannya
+  saja per keputusan user 23 Agustus 2026; `dev` dibiarkan apa adanya, tidak
+  disentuh/dihapus. Kalau nanti mau full-merge (ganti ke Supabase +
+  ekspansi role), itu keputusan besar terpisah, belum dilakukan.
 - Ikon app (`assets/icon/app_icon*.png`) hasil recreate manual
   (`scripts/gen_icon.py`), BUKAN file asli dari user (belum pernah di-share
   sebagai file, cuma gambar di chat) — dipakai baik untuk ikon launcher

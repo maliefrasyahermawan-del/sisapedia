@@ -46,7 +46,6 @@ dependencies:
   speech_to_text: ^7.4.0
   permission_handler: ^13.0.1
   http: ^1.6.0
-  google_fonts: ^8.2.1
   flutter_dotenv: ^6.0.1
   intl: ^0.20.3
 
@@ -85,6 +84,14 @@ flutter:
   assets:
     - .env
     - assets/icon/app_icon.png
+
+  fonts:
+    - family: RedHatDisplay
+      fonts:
+        - asset: assets/fonts/RedHatDisplay[wght].ttf
+    - family: RedHatText
+      fonts:
+        - asset: assets/fonts/RedHatText[wght].ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

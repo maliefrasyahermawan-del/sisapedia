@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/submission_model.dart';
 import '../../features/articles/article_detail_screen.dart';
+import '../../features/articles/article_list_screen.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
@@ -100,6 +101,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/sari-chat',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SariChatScreen(),
+      ),
+      GoRoute(
+        path: '/artikel',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ArticleListScreen(),
       ),
       GoRoute(
         path: '/artikel/:id',

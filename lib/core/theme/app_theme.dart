@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
@@ -16,10 +15,30 @@ class AppTheme {
         error: AppColors.error,
       ),
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: GoogleFonts.manrope().fontFamily,
+      fontFamily: 'RedHatText',
     );
 
     return base.copyWith(
+      textTheme: base.textTheme.copyWith(
+        displayLarge:
+            base.textTheme.displayLarge?.copyWith(fontFamily: 'RedHatDisplay'),
+        displayMedium: base.textTheme.displayMedium
+            ?.copyWith(fontFamily: 'RedHatDisplay'),
+        displaySmall:
+            base.textTheme.displaySmall?.copyWith(fontFamily: 'RedHatDisplay'),
+        headlineLarge: base.textTheme.headlineLarge
+            ?.copyWith(fontFamily: 'RedHatDisplay'),
+        headlineMedium: base.textTheme.headlineMedium
+            ?.copyWith(fontFamily: 'RedHatDisplay'),
+        headlineSmall: base.textTheme.headlineSmall
+            ?.copyWith(fontFamily: 'RedHatDisplay'),
+        titleLarge:
+            base.textTheme.titleLarge?.copyWith(fontFamily: 'RedHatDisplay'),
+        titleMedium:
+            base.textTheme.titleMedium?.copyWith(fontFamily: 'RedHatDisplay'),
+        titleSmall:
+            base.textTheme.titleSmall?.copyWith(fontFamily: 'RedHatDisplay'),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
