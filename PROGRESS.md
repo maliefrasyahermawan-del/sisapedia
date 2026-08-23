@@ -12,10 +12,12 @@ role ("Saya Sumber" / "Saya Pengolah") tapi "Saya Pengolah" sengaja
 non-fungsional ("Segera hadir") — semua akun baru tetap terdaftar sebagai
 Sumber.
 
-Checkpoint git: lihat `git log --oneline -3`. Commit terakhir mencakup patch
-sesi **22 Agustus 2026**: redesign Beranda header/kartu poin + layar sukses
-setor + Login/Daftar sesuai referensi desain, dan login "Tamu"/"Akun
-Testing" baru (lihat Bagian 4).
+Checkpoint git: lihat `git log --oneline -3`. Dua commit terakhir sama-sama
+dari sesi **22 Agustus 2026**: (1) redesign Beranda header/kartu poin +
+layar sukses setor + Login/Daftar sesuai referensi desain + login
+"Tamu"/"Akun Testing" baru, lalu (2) patch susulan — fix bug kartu poin
+ketutup header, warna box kategori setor, ganti ikon app + nama app jadi
+"SisaPedia" (lihat Bagian 4 & 4b).
 
 ## 2. Cara build & extract APK
 
@@ -41,10 +43,11 @@ Hasil APK selalu di path yang sama (build ulang menimpa file lama):
 build\app\outputs\flutter-apk\app-release.apk
 ```
 
-Build terakhir (22 Agustus 2026, mode normal/non-preview): **56.2MB**,
-berhasil, `flutter analyze` bersih. Ada 1 warning Gradle soal Kotlin Gradle
-Plugin (`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan
-untuk saat ini.
+Build terakhir (22 Agustus 2026, mode normal/non-preview, setelah patch
+susulan ikon+warna+bugfix): **56.1MB**, berhasil, `flutter analyze` bersih
+(0 issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin
+(`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan untuk
+saat ini.
 
 > Catatan: login "Masuk sebagai Akun Testing" (Bagian 4) sekarang jadi cara
 > paling gampang untuk lihat app terisi data mock **tanpa** perlu build
@@ -206,6 +209,36 @@ didesain ulang** — tidak ada layar lain di mockup yang ikut diterapkan.
   `fake_repositories.dart` (data + kelas Fake) supaya bisa dipakai runtime
   tanpa circular import balik ke `repository_providers.dart`.
 
+## 4c. Patch susulan sesi 22 Agustus 2026 (sama hari, commit terpisah)
+
+Tiga hal yang direvisi user setelah lihat hasil patch 4b:
+
+- **Bug kartu poin ketutup header** — root cause-nya trik
+  `Transform.translate` di dalam `SliverToBoxAdapter` (Bagian 4b) cuma
+  menggeser hasil gambar (paint offset), bukan posisi layout aslinya, jadi
+  urutan gambar antar sliver kadang bikin header nutupin sebagian kartu
+  level. Diganti total: `beranda_screen.dart` sekarang render header +
+  kartu poin dalam satu `Stack` eksplisit (kartu poin jadi child terakhir
+  → selalu di atas), bukan dua sliver terpisah lagi.
+- **Warna box kategori setor** (`setor_actions_section.dart`) — mengikuti
+  gaya pewarnaan dari referensi (bukan layoutnya): "Setor Organik" latar
+  hijau muda, "Setor Anorganik" latar biru muda, "Wilayah Pencocokan" latar
+  oranye muda. Layout kartu (ukuran, susunan 2 kolom + 1 baris penuh) tetap
+  seperti sebelumnya.
+- **Ganti ikon app + nama app** — ikon launcher (Android semua mipmap +
+  adaptive icon, iOS semua ukuran AppIcon.appiconset) diganti jadi logo
+  bowtie hijau-biru sesuai referensi, di-generate lewat
+  `flutter_launcher_icons` dari `assets/icon/app_icon*.png`. **Catatan
+  jujur**: file gambar logo asli yang dikirim user tidak ada di disk lokal
+  (cuma terlihat di chat), jadi bentuknya di-recreate ulang secara
+  presisi (`scripts/gen_icon.py`, dua segitiga simetris) — kalau ada
+  perbedaan detail dari file asli, minta user kirim file PNG-nya langsung
+  lalu timpa `assets/icon/app_icon.png` + `app_icon_foreground.png` dan
+  jalankan ulang `dart run flutter_launcher_icons`. Nama tampilan app juga
+  dibetulkan castingnya: `sisapedia` → `SisaPedia` di
+  `android/app/src/main/AndroidManifest.xml` (`android:label`) dan
+  `ios/Runner/Info.plist` (`CFBundleDisplayName`/`CFBundleName`).
+
 ## 5. Yang BELUM dikerjakan / diketahui terbatas
 
 - Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
@@ -233,6 +266,10 @@ didesain ulang** — tidak ada layar lain di mockup yang ikut diterapkan.
 - Akun "Tamu" & "Akun Testing" cuma state lokal di memori (`sessionModeProvider`),
   reset otomatis ke `normal` tiap kali tombol "Keluar" di Profil ditekan atau
   app di-restart — belum ada persist ke local storage.
+- Ikon app (`assets/icon/app_icon*.png`) hasil recreate manual
+  (`scripts/gen_icon.py`), BUKAN file asli dari user (belum pernah di-share
+  sebagai file, cuma gambar di chat) — lihat Bagian 4c kalau mau ganti pakai
+  file PNG asli.
 
 ## 6. Config yang HARUS disiapkan manual (tidak bisa dikerjakan AI)
 
