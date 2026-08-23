@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/providers/repository_providers.dart';
 import '../../core/services/waste_voice_parser.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/submission_model.dart';
+import '../setor_manual/setor_form_screen.dart';
 import '../../shared/widgets/app_card.dart';
 
 /// Opens the "Setor Cerdas" voice-logging bottom sheet.
@@ -40,8 +42,10 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
   int _elapsedSeconds = 0;
   Timer? _timer;
   List<ParsedWasteItem> _parsedItems = [];
-  bool _submitting = false;
   bool _permissionDenied = false;
+  WasteCategory _editedCategory = WasteCategory.organik;
+  final _editedSubtypeController = TextEditingController();
+  final _editedWeightController = TextEditingController();
 
   @override
   void initState() {
@@ -53,7 +57,19 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
   void dispose() {
     _timer?.cancel();
     ref.read(speechServiceProvider).cancel();
+    _editedSubtypeController.dispose();
+    _editedWeightController.dispose();
     super.dispose();
+  }
+
+  void _setParsedItems(List<ParsedWasteItem> items) {
+    _parsedItems = items;
+    if (items.isNotEmpty) {
+      final item = items.first;
+      _editedCategory = item.kategori;
+      _editedSubtypeController.text = item.subtipe;
+      _editedWeightController.text = item.beratKg.toString();
+    }
   }
 
   Future<void> _startListening() async {
@@ -97,17 +113,42 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
     setState(() => _state = _VoiceState.unclear);
   }
 
-  void _processTranscript() {
-    final parser = ref.read(wasteVoiceParserProvider);
-    final result = parser.parse(_transcript);
-    setState(() {
-      if (result.isClear) {
-        _parsedItems = result.items;
-        _state = _VoiceState.confirming;
-      } else {
-        _state = _VoiceState.unclear;
+  Future<void> _processTranscript() async {
+    try {
+      final extraction = await ref
+          .read(sariGatewayProvider)
+          .extractWaste(_transcript);
+      if (extraction.needsClarification) {
+        if (mounted) setState(() => _state = _VoiceState.unclear);
+        return;
       }
-    });
+      if (mounted) {
+        setState(() {
+          _setParsedItems([
+            ParsedWasteItem(
+              subtipe: extraction.subtype,
+              kategori: extraction.category == 'anorganik'
+                  ? WasteCategory.anorganik
+                  : WasteCategory.organik,
+              beratKg: extraction.weightKg,
+            ),
+          ]);
+          _state = _VoiceState.confirming;
+        });
+      }
+    } catch (_) {
+      // Network/router failures never discard the user's transcript. Use the
+      // deterministic local parser and keep the same editable confirmation.
+      final fallback = ref.read(wasteVoiceParserProvider).parse(_transcript);
+      if (mounted) {
+        setState(() {
+          _setParsedItems(fallback.items);
+          _state = fallback.isClear
+              ? _VoiceState.confirming
+              : _VoiceState.unclear;
+        });
+      }
+    }
   }
 
   void _retry() {
@@ -122,19 +163,45 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
   }
 
   Future<void> _submit() async {
-    setState(() => _submitting = true);
-    final repo = ref.read(submissionRepositoryProvider);
-    for (final item in _parsedItems) {
-      await repo.create(SubmissionModel(
-        id: '',
-        uid: widget.uid,
-        kategori: item.kategori,
-        subtipe: item.subtipe,
-        beratKg: item.beratKg,
-        source: SubmissionSource.voice,
-      ));
+    if (_parsedItems.isEmpty || !mounted) return;
+    final weight = double.tryParse(
+      _editedWeightController.text.replaceAll(',', '.'),
+    );
+    final subtype = _editedSubtypeController.text.trim();
+    if (weight == null || weight <= 0 || subtype.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Periksa kategori, jenis, dan berat.')),
+      );
+      return;
     }
-    if (mounted) Navigator.of(context).pop();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Lengkapi lokasi pickup'),
+        content: const Text(
+          'Hasil suara sudah siap diedit. Lengkapi alamat, pin, dan jendela pickup di formulir Setor sebelum dikirim.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    final category = _editedCategory.name;
+    if (context.mounted) {
+      context.pop();
+      context.push(
+        '/setor/$category',
+        extra: WastePrefill(
+          kategori: _editedCategory,
+          subtipe: subtype,
+          beratKg: weight,
+        ),
+      );
+    }
   }
 
   @override
@@ -174,7 +241,11 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
             color: AppColors.primaryLight,
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.mic_rounded, color: AppColors.primary, size: 36),
+          child: const Icon(
+            Icons.mic_rounded,
+            color: AppColors.primary,
+            size: 36,
+          ),
         ),
         const SizedBox(height: 16),
         Text('Sari', style: AppTextStyles.caption),
@@ -246,11 +317,17 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
       key: const ValueKey('unclear'),
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.sentiment_dissatisfied_rounded,
-            color: AppColors.warning, size: 48),
+        const Icon(
+          Icons.sentiment_dissatisfied_rounded,
+          color: AppColors.warning,
+          size: 48,
+        ),
         const SizedBox(height: 12),
-        Text('Maaf, Sari kurang jelas dengar ucapanmu',
-            style: AppTextStyles.h3, textAlign: TextAlign.center),
+        Text(
+          'Maaf, Sari kurang jelas dengar ucapanmu',
+          style: AppTextStyles.h3,
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
         Text(
           'Coba ucapkan lagi dengan jelas, contoh: "5 kilo botol plastik"',
@@ -260,7 +337,10 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
         const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(onPressed: _retry, child: const Text('Coba Lagi')),
+          child: ElevatedButton(
+            onPressed: _retry,
+            child: const Text('Coba Lagi'),
+          ),
         ),
         const SizedBox(height: 4),
         TextButton(
@@ -281,6 +361,37 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
         const SizedBox(height: 4),
         Text('Periksa dulu sebelum dikirim', style: AppTextStyles.captionMuted),
         const SizedBox(height: 16),
+        if (_parsedItems.isNotEmpty) ...[
+          DropdownButtonFormField<WasteCategory>(
+            initialValue: _editedCategory,
+            decoration: const InputDecoration(labelText: 'Kategori'),
+            items: const [
+              DropdownMenuItem(
+                value: WasteCategory.organik,
+                child: Text('Organik'),
+              ),
+              DropdownMenuItem(
+                value: WasteCategory.anorganik,
+                child: Text('Anorganik'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _editedCategory = value);
+            },
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _editedSubtypeController,
+            decoration: const InputDecoration(labelText: 'Jenis/subtipe'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _editedWeightController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Berat (kg)'),
+          ),
+          const SizedBox(height: 12),
+        ],
         for (final item in _parsedItems)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -296,7 +407,9 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
                         : AppColors.anorganik,
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(item.subtipe, style: AppTextStyles.bodyBold)),
+                  Expanded(
+                    child: Text(item.subtipe, style: AppTextStyles.bodyBold),
+                  ),
                   Text('${item.beratKg} kg', style: AppTextStyles.bodyBold),
                 ],
               ),
@@ -306,17 +419,8 @@ class _VoiceModalState extends ConsumerState<VoiceModal> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Kirim Setoran'),
+            onPressed: _submit,
+            child: const Text('Lengkapi lokasi dan lanjutkan'),
           ),
         ),
         const SizedBox(height: 4),

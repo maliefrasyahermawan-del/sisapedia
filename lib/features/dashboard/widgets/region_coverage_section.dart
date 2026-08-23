@@ -34,12 +34,14 @@ class RegionCoverageSection extends StatelessWidget {
                       Icon(
                         Icons.location_on_rounded,
                         size: 18,
-                        color:
-                            region.active ? AppColors.primary : AppColors.textMuted,
+                        color: region.active
+                            ? AppColors.primary
+                            : AppColors.textMuted,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                          child: Text(region.name, style: AppTextStyles.bodyBold)),
+                        child: Text(region.name, style: AppTextStyles.bodyBold),
+                      ),
                       Text(
                         region.active ? 'Aktif' : 'Segera hadir',
                         style: AppTextStyles.captionMuted.copyWith(

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MovementEventModel {
   final String id;
   final String title;
@@ -22,7 +20,9 @@ class MovementEventModel {
       id: id,
       title: map['title'] as String? ?? '',
       organizer: map['organizer'] as String? ?? '',
-      date: (map['date'] as Timestamp?)?.toDate(),
+      date: map['date'] is String
+          ? DateTime.tryParse(map['date'] as String)
+          : map['date'] as DateTime?,
       location: map['location'] as String? ?? '',
       imageUrl: map['image_url'] as String?,
     );
@@ -32,7 +32,7 @@ class MovementEventModel {
     return {
       'title': title,
       'organizer': organizer,
-      'date': date != null ? Timestamp.fromDate(date!) : null,
+      'date': date?.toUtc().toIso8601String(),
       'location': location,
       'image_url': imageUrl,
     };

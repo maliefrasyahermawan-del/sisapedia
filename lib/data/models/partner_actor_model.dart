@@ -33,6 +33,14 @@ class PartnerActorModel {
   final List<String> kategoriDiterima;
   final String kecamatan;
   final String alamat;
+  final bool active;
+  final bool approved;
+  final bool pickupAvailable;
+  final double serviceRadiusKm;
+  final double minimumPickupKg;
+  final DateTime? pickupStart;
+  final DateTime? pickupEnd;
+  final Map<String, double> referenceValues;
 
   const PartnerActorModel({
     required this.id,
@@ -45,6 +53,14 @@ class PartnerActorModel {
     this.kategoriDiterima = const [],
     this.kecamatan = '',
     this.alamat = '',
+    this.active = true,
+    this.approved = true,
+    this.pickupAvailable = true,
+    this.serviceRadiusKm = 10,
+    this.minimumPickupKg = 1,
+    this.pickupStart,
+    this.pickupEnd,
+    this.referenceValues = const {},
   });
 
   factory PartnerActorModel.fromMap(String id, Map<String, dynamic> map) {
@@ -56,12 +72,28 @@ class PartnerActorModel {
       lng: (map['lng'] as num?)?.toDouble() ?? 0,
       kapasitasTersedia: (map['kapasitas_tersedia'] as num?)?.toDouble() ?? 0,
       kapasitasTotal: (map['kapasitas_total'] as num?)?.toDouble() ?? 0,
-      kategoriDiterima: (map['kategori_diterima'] as List?)
+      kategoriDiterima:
+          (map['kategori_diterima'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       kecamatan: map['kecamatan'] as String? ?? '',
       alamat: map['alamat'] as String? ?? '',
+      active: map['active'] as bool? ?? true,
+      approved:
+          (map['approved'] as bool?) ??
+          (map['status'] == null || map['status'] == 'approved'),
+      pickupAvailable: map['pickup_available'] as bool? ?? true,
+      serviceRadiusKm: (map['service_radius_km'] as num?)?.toDouble() ?? 10,
+      minimumPickupKg: (map['minimum_pickup_kg'] as num?)?.toDouble() ?? 1,
+      pickupStart: _date(map['pickup_start']),
+      pickupEnd: _date(map['pickup_end']),
+      referenceValues:
+          (map['reference_values'] as Map?)?.map(
+            (key, value) =>
+                MapEntry(key.toString(), (value as num?)?.toDouble() ?? 0),
+          ) ??
+          const {},
     );
   }
 
@@ -76,6 +108,20 @@ class PartnerActorModel {
       'kategori_diterima': kategoriDiterima,
       'kecamatan': kecamatan,
       'alamat': alamat,
+      'active': active,
+      'approved': approved,
+      'pickup_available': pickupAvailable,
+      'service_radius_km': serviceRadiusKm,
+      'minimum_pickup_kg': minimumPickupKg,
+      'pickup_start': pickupStart?.toUtc().toIso8601String(),
+      'pickup_end': pickupEnd?.toUtc().toIso8601String(),
+      'reference_values': referenceValues,
     };
   }
 }
+
+DateTime? _date(dynamic value) => value is DateTime
+    ? value
+    : value is String
+    ? DateTime.tryParse(value)
+    : null;

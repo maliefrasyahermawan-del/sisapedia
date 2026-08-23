@@ -24,7 +24,8 @@ class _SariChatScreenState extends ConsumerState<SariChatScreen> {
   final List<_ChatMessage> _messages = [
     const _ChatMessage(
       role: 'assistant',
-      text: 'Hai! Aku Sari, asisten sirkularmu di SisaPedia. '
+      text:
+          'Hai! Aku Sari, asisten sirkularmu di SisaPedia. '
           'Ada yang bisa kubantu soal poin, setoran, atau jadwal jemput?',
     ),
   ];
@@ -59,27 +60,32 @@ class _SariChatScreenState extends ConsumerState<SariChatScreen> {
     _scrollToBottom();
 
     try {
-      final groq = ref.read(groqServiceProvider);
+      final sari = ref.read(sariGatewayProvider);
       final history = [
         for (final m in _messages) {'role': m.role, 'content': m.text},
       ];
-      final reply = await groq.chat(history);
+      final reply = await sari.chat(history);
       if (!mounted) return;
       setState(() {
-        _messages.add(_ChatMessage(
-          role: 'assistant',
-          text: reply.isNotEmpty
-              ? reply
-              : 'Maaf, aku belum bisa jawab itu sekarang.',
-        ));
+        _messages.add(
+          _ChatMessage(
+            role: 'assistant',
+            text: reply.isNotEmpty
+                ? reply
+                : 'Maaf, aku belum bisa jawab itu sekarang.',
+          ),
+        );
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _messages.add(const _ChatMessage(
-          role: 'assistant',
-          text: 'Sari sedang tidak bisa menjawab, coba lagi sebentar lagi ya.',
-        ));
+        _messages.add(
+          const _ChatMessage(
+            role: 'assistant',
+            text:
+                'Sari sedang tidak bisa menjawab, coba lagi sebentar lagi ya.',
+          ),
+        );
       });
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -89,6 +95,7 @@ class _SariChatScreenState extends ConsumerState<SariChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sari = ref.watch(sariGatewayProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -102,16 +109,31 @@ class _SariChatScreenState extends ConsumerState<SariChatScreen> {
                 color: AppColors.primary,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.eco_rounded,
-                  color: Colors.white, size: 18),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Sari', style: AppTextStyles.h3),
-                Text('Asisten Sirkular SisaPedia',
-                    style: AppTextStyles.captionMuted),
+                Text(
+                  'Asisten Sirkular SisaPedia',
+                  style: AppTextStyles.captionMuted,
+                ),
+                Text(
+                  sari.isOmniRouteConfigured
+                      ? 'OmniRoute terkonfigurasi'
+                      : 'Fallback lokal aktif',
+                  style: AppTextStyles.captionMuted.copyWith(
+                    color: sari.isOmniRouteConfigured
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ],

@@ -49,7 +49,10 @@ class SetorActionsSection extends StatelessWidget {
           onTap: onWilayahPencocokan,
           child: Row(
             children: [
-              const Icon(Icons.travel_explore_rounded, color: AppColors.primary),
+              const Icon(
+                Icons.travel_explore_rounded,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -57,12 +60,17 @@ class SetorActionsSection extends StatelessWidget {
                   children: [
                     Text('Wilayah Pencocokan', style: AppTextStyles.h3),
                     const SizedBox(height: 2),
-                    Text('Cari via daftar wilayah',
-                        style: AppTextStyles.captionMuted),
+                    Text(
+                      'Cari via daftar wilayah',
+                      style: AppTextStyles.captionMuted,
+                    ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),

@@ -68,8 +68,7 @@ class PanduanScreen extends StatelessWidget {
               title: Text(section.title, style: AppTextStyles.bodyBold),
               iconColor: AppColors.primary,
               collapsedIconColor: AppColors.textMuted,
-              childrenPadding:
-                  const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
               expandedCrossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final point in section.points)

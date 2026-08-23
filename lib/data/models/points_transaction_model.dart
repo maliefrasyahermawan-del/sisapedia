@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum PointsTransactionType { earn, redeem }
 
 enum PointsTransactionStatus { completed, pendingRedeem }
@@ -46,7 +44,7 @@ class PointsTransactionModel {
       status: (map['status'] as String?) == 'pending_redeem'
           ? PointsTransactionStatus.pendingRedeem
           : PointsTransactionStatus.completed,
-      createdAt: (map['created_at'] as Timestamp?)?.toDate(),
+      createdAt: _pointsDate(map['created_at']),
     );
   }
 
@@ -59,7 +57,13 @@ class PointsTransactionModel {
       'status': status == PointsTransactionStatus.pendingRedeem
           ? 'pending_redeem'
           : 'completed',
-      'created_at': FieldValue.serverTimestamp(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
     };
   }
 }
+
+DateTime? _pointsDate(dynamic value) => value is DateTime
+    ? value
+    : value is String
+    ? DateTime.tryParse(value)
+    : null;

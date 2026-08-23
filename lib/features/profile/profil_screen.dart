@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_card.dart';
 import '../auth/auth_controller.dart';
+import '../../core/preview/preview_store.dart';
 
 class ProfilScreen extends ConsumerWidget {
   const ProfilScreen({super.key});
@@ -66,9 +67,7 @@ class ProfilScreen extends ConsumerWidget {
                   radius: 28,
                   backgroundColor: AppColors.primaryLight,
                   child: Text(
-                    (profile?.name.isNotEmpty == true
-                            ? profile!.name[0]
-                            : '?')
+                    (profile?.name.isNotEmpty == true ? profile!.name[0] : '?')
                         .toUpperCase(),
                     style: AppTextStyles.h1.copyWith(color: AppColors.primary),
                   ),
@@ -80,13 +79,16 @@ class ProfilScreen extends ConsumerWidget {
                     children: [
                       Text(profile?.name ?? '-', style: AppTextStyles.h3),
                       const SizedBox(height: 2),
-                      Text(profile?.levelTitle ?? 'Pejuang Kota Sirkular',
-                          style: AppTextStyles.captionMuted),
+                      Text(
+                        profile?.levelTitle ?? 'Pejuang Kota Sirkular',
+                        style: AppTextStyles.captionMuted,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         '${NumberFormat.decimalPattern('id_ID').format(profile?.poinSirkular ?? 0)} Poin Sirkular',
-                        style: AppTextStyles.bodyBold
-                            .copyWith(color: AppColors.primary),
+                        style: AppTextStyles.bodyBold.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -95,6 +97,52 @@ class ProfilScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 20),
+          if (ref.watch(sessionModeProvider) == SessionMode.demo) ...[
+            Text('DEMO ROLE SWITCHER', style: AppTextStyles.caption),
+            const SizedBox(height: 8),
+            AppCard(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz),
+                    title: const Text('Ganti pengalaman peran'),
+                    subtitle: Text('Aktif: ${PreviewStore.role}'),
+                    onTap: () async {
+                      final selected = await showModalBottomSheet<String>(
+                        context: context,
+                        builder: (c) => SafeArea(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final role in [
+                                'sumber',
+                                'pengolah',
+                                'dlh',
+                                'admin',
+                              ])
+                                ListTile(
+                                  title: Text(
+                                    role[0].toUpperCase() + role.substring(1),
+                                  ),
+                                  onTap: () => Navigator.pop(c, role),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (selected != null) {
+                        PreviewStore.role = selected;
+                        await PreviewStore.save();
+                        ref.read(previewRoleProvider.notifier).state = selected;
+                        if (context.mounted) context.push('/role');
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
           Text('TENTANG', style: AppTextStyles.caption),
           const SizedBox(height: 8),
           AppCard(
@@ -104,8 +152,10 @@ class ProfilScreen extends ConsumerWidget {
                 for (final link in _infoLinks) ...[
                   ListTile(
                     title: Text(link.label, style: AppTextStyles.body),
-                    trailing: const Icon(Icons.chevron_right_rounded,
-                        color: AppColors.textMuted),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textMuted,
+                    ),
                     onTap: () => context.push('/profil/info/${link.slug}'),
                   ),
                   if (link != _infoLinks.last) const Divider(height: 1),

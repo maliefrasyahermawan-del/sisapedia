@@ -21,8 +21,10 @@ class CategoryBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (categories.isEmpty) {
-      return Text('Belum ada data setoran terverifikasi.',
-          style: AppTextStyles.captionMuted);
+      return Text(
+        'Belum ada data setoran terverifikasi.',
+        style: AppTextStyles.captionMuted,
+      );
     }
     return Column(
       children: [
@@ -33,7 +35,10 @@ class CategoryBreakdown extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text(categories[i].subtipe, style: AppTextStyles.bodySmall),
+                  child: Text(
+                    categories[i].subtipe,
+                    style: AppTextStyles.bodySmall,
+                  ),
                 ),
                 Expanded(
                   flex: 5,

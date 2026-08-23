@@ -9,10 +9,7 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/section_header.dart';
 
 class RedeemArticleSection extends ConsumerWidget {
-  const RedeemArticleSection({
-    super.key,
-    required this.onRedeem,
-  });
+  const RedeemArticleSection({super.key, required this.onRedeem});
 
   final void Function(int jumlah, String deskripsi) onRedeem;
 
@@ -150,8 +147,10 @@ class _ArticleCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ARTIKEL',
-              style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+          Text(
+            'ARTIKEL',
+            style: AppTextStyles.caption.copyWith(color: AppColors.primary),
+          ),
           const SizedBox(height: 6),
           Text(title, style: AppTextStyles.h3),
           const SizedBox(height: 4),
@@ -159,8 +158,9 @@ class _ArticleCard extends StatelessWidget {
             summary,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.bodySmall
-                .copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 8),
           Text('Selengkapnya', style: AppTextStyles.bodyBold),

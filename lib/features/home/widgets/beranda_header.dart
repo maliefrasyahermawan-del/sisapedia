@@ -65,8 +65,11 @@ class BerandaHeader extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.eco_rounded,
-                            color: Colors.white, size: 22),
+                        const Icon(
+                          Icons.eco_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('SisaPedia', style: AppTextStyles.brand),
@@ -118,8 +121,11 @@ class _NotificationBell extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.notifications_rounded,
-                color: Colors.white, size: 20),
+            const Icon(
+              Icons.notifications_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
             if (hasUnread)
               Positioned(
                 right: -2,

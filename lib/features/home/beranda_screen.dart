@@ -38,18 +38,20 @@ class BerandaScreen extends ConsumerWidget {
       _showSnack(context, 'Poin sirkular kamu belum cukup untuk ini.');
       return;
     }
-    await ref.read(pointsRepositoryProvider).requestRedeem(
-          uid: uid,
-          jumlah: jumlah,
-          deskripsi: deskripsi,
-        );
+    await ref
+        .read(pointsRepositoryProvider)
+        .requestRedeem(uid: uid, jumlah: jumlah, deskripsi: deskripsi);
     if (context.mounted) {
       _showSnack(context, 'Permintaan diajukan, diproses admin.');
     }
   }
 
   void _openRedeemSheet(
-      BuildContext context, WidgetRef ref, String uid, int currentPoin) {
+    BuildContext context,
+    WidgetRef ref,
+    String uid,
+    int currentPoin,
+  ) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -66,26 +68,42 @@ class BerandaScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.account_balance_wallet_rounded,
-                    color: AppColors.primary),
+                leading: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Cairkan Poin ke Dana/OVO'),
                 subtitle: const Text('Min. 500 poin sirkular'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _handleRedeem(context, ref, uid, currentPoin, 500,
-                      'Cairkan Poin ke Dana/OVO');
+                  _handleRedeem(
+                    context,
+                    ref,
+                    uid,
+                    currentPoin,
+                    500,
+                    'Cairkan Poin ke Dana/OVO',
+                  );
                 },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.card_giftcard_rounded,
-                    color: AppColors.primary),
+                leading: const Icon(
+                  Icons.card_giftcard_rounded,
+                  color: AppColors.primary,
+                ),
                 title: const Text('Voucher Kompos Organik'),
                 subtitle: const Text('Dari mitra Kompos Tandur Ijo · 300 poin'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _handleRedeem(context, ref, uid, currentPoin, 300,
-                      'Voucher Kompos Organik');
+                  _handleRedeem(
+                    context,
+                    ref,
+                    uid,
+                    currentPoin,
+                    300,
+                    'Voucher Kompos Organik',
+                  );
                 },
               ),
             ],
@@ -126,7 +144,8 @@ class BerandaScreen extends ConsumerWidget {
     final profileAsync = ref.watch(userProfileProvider);
     final isGuest = ref.watch(sessionModeProvider) == SessionMode.guest;
     final uid =
-        ref.watch(currentUidProvider).valueOrNull ?? (isGuest ? kGuestUid : null);
+        ref.watch(currentUidProvider).valueOrNull ??
+        (isGuest ? kGuestUid : null);
 
     if (uid == null || profileAsync.isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -178,7 +197,13 @@ class BerandaScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   RedeemArticleSection(
                     onRedeem: (jumlah, deskripsi) => _handleRedeem(
-                        context, ref, uid, poin, jumlah, deskripsi),
+                      context,
+                      ref,
+                      uid,
+                      poin,
+                      jumlah,
+                      deskripsi,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   MovementSection(

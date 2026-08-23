@@ -53,7 +53,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Expanded(
                           child: _StatTile(
                             label: 'Organik Dialihkan',
-                            value: '${stats.organikThisMonth.toStringAsFixed(1)} kg',
+                            value:
+                                '${stats.organikThisMonth.toStringAsFixed(1)} kg',
                             caption: 'dari TPA bulan ini',
                             color: AppColors.organik,
                           ),
@@ -84,7 +85,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       subtitle: 'Berdasarkan kategori setoran bulan ini',
                     ),
                     const SizedBox(height: 12),
-                    AppCard(child: CategoryBreakdown(categories: stats.categories)),
+                    AppCard(
+                      child: CategoryBreakdown(categories: stats.categories),
+                    ),
                     const SizedBox(height: 24),
                     const RegionCoverageSection(),
                   ],
@@ -94,8 +97,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, _) => Text('Gagal memuat data dashboard.',
-                  style: AppTextStyles.captionMuted.copyWith(color: AppColors.error)),
+              error: (_, _) => Text(
+                'Gagal memuat data dashboard.',
+                style: AppTextStyles.captionMuted.copyWith(
+                  color: AppColors.error,
+                ),
+              ),
             ),
           ],
         ),
@@ -121,17 +128,33 @@ class _ScopeToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(child: _segment(context, 'Saya', !isCityScope, () => onChanged(false))),
           Expanded(
-              child: _segment(
-                  context, 'Kota Semarang', isCityScope, () => onChanged(true))),
+            child: _segment(
+              context,
+              'Saya',
+              !isCityScope,
+              () => onChanged(false),
+            ),
+          ),
+          Expanded(
+            child: _segment(
+              context,
+              'Kota Semarang',
+              isCityScope,
+              () => onChanged(true),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _segment(
-      BuildContext context, String label, bool selected, VoidCallback onTap) {
+    BuildContext context,
+    String label,
+    bool selected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

@@ -10,8 +10,11 @@ Future<void> showGuestRegisterGate(BuildContext context) {
   return showDialog(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      icon: const Icon(Icons.lock_person_rounded,
-          color: AppColors.primary, size: 32),
+      icon: const Icon(
+        Icons.lock_person_rounded,
+        color: AppColors.primary,
+        size: 32,
+      ),
       title: Text('Anda Belum Terdaftar', style: AppTextStyles.h3),
       content: Text(
         'Daftar akun untuk bisa menyetor sampah dan mengumpulkan poin.',

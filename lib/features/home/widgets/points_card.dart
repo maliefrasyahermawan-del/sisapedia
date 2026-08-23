@@ -55,7 +55,10 @@ class PointsCard extends StatelessWidget {
               child: Transform.rotate(
                 angle: 2 * math.pi / 180,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.levelBadge,
                     borderRadius: const BorderRadius.only(
@@ -131,8 +134,10 @@ class PointsCard extends StatelessWidget {
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.white.withValues(alpha: 0.14),
                     foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -184,8 +189,10 @@ class _LevelRing extends StatelessWidget {
           ),
           Text(
             '${(progress * 100).round()}%',
-            style: AppTextStyles.bodyBold
-                .copyWith(color: Colors.white, fontSize: 12.5),
+            style: AppTextStyles.bodyBold.copyWith(
+              color: Colors.white,
+              fontSize: 12.5,
+            ),
           ),
         ],
       ),

@@ -36,12 +36,15 @@ class TrendChart extends StatelessWidget {
                     const FlLine(color: AppColors.border, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
-                leftTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -53,8 +56,10 @@ class TrendChart extends StatelessWidget {
                       }
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Text(monthly[index].monthLabel,
-                            style: AppTextStyles.captionMuted),
+                        child: Text(
+                          monthly[index].monthLabel,
+                          style: AppTextStyles.captionMuted,
+                        ),
                       );
                     },
                   ),
@@ -102,7 +107,10 @@ class TrendChart extends StatelessWidget {
       color: color,
       barWidth: 3,
       dotData: const FlDotData(show: false),
-      belowBarData: BarAreaData(show: true, color: color.withValues(alpha: 0.08)),
+      belowBarData: BarAreaData(
+        show: true,
+        color: color.withValues(alpha: 0.08),
+      ),
     );
   }
 }

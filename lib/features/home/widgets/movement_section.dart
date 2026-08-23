@@ -29,8 +29,10 @@ class MovementSection extends ConsumerWidget {
         eventsAsync.when(
           data: (events) {
             if (events.isEmpty) {
-              return Text('Belum ada event komunitas.',
-                  style: AppTextStyles.captionMuted);
+              return Text(
+                'Belum ada event komunitas.',
+                style: AppTextStyles.captionMuted,
+              );
             }
             return Column(
               children: [
@@ -48,8 +50,10 @@ class MovementSection extends ConsumerWidget {
                                 [
                                   event.organizer,
                                   if (event.date != null)
-                                    DateFormat('d MMM', 'id_ID')
-                                        .format(event.date!),
+                                    DateFormat(
+                                      'd MMM',
+                                      'id_ID',
+                                    ).format(event.date!),
                                 ].join(' · '),
                                 style: AppTextStyles.captionMuted,
                               ),
@@ -72,8 +76,10 @@ class MovementSection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (_, _) => Text('Gagal memuat event.',
-              style: AppTextStyles.captionMuted.copyWith(color: AppColors.error)),
+          error: (_, _) => Text(
+            'Gagal memuat event.',
+            style: AppTextStyles.captionMuted.copyWith(color: AppColors.error),
+          ),
         ),
       ],
     );

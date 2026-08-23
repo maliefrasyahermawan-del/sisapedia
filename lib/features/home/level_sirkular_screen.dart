@@ -25,8 +25,7 @@ class _LevelTier {
     required this.color,
   });
 
-  String get rangeLabel =>
-      maxKg != null ? '$minKg-$maxKg kg' : '$minKg+ kg';
+  String get rangeLabel => maxKg != null ? '$minKg-$maxKg kg' : '$minKg+ kg';
 }
 
 const _tiers = [
@@ -87,8 +86,10 @@ class LevelSirkularScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Level Sirkular')),
       body: submissionsAsync.when(
         data: (submissions) {
-          final totalKg =
-              submissions.fold<double>(0, (sum, s) => sum + s.beratKg);
+          final totalKg = submissions.fold<double>(
+            0,
+            (sum, s) => sum + s.beratKg,
+          );
           final currentIndex = () {
             var idx = 0;
             for (var i = 0; i < _tiers.length; i++) {
@@ -97,8 +98,9 @@ class LevelSirkularScreen extends ConsumerWidget {
             return idx;
           }();
           final currentTier = _tiers[currentIndex];
-          final nextTier =
-              currentIndex + 1 < _tiers.length ? _tiers[currentIndex + 1] : null;
+          final nextTier = currentIndex + 1 < _tiers.length
+              ? _tiers[currentIndex + 1]
+              : null;
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -130,8 +132,10 @@ class LevelSirkularScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Padding(
           padding: const EdgeInsets.all(20),
-          child: Text('Gagal memuat data level.',
-              style: AppTextStyles.captionMuted.copyWith(color: AppColors.error)),
+          child: Text(
+            'Gagal memuat data level.',
+            style: AppTextStyles.captionMuted.copyWith(color: AppColors.error),
+          ),
         ),
       ),
     );
@@ -154,8 +158,9 @@ class _LevelSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = nextTier != null
-        ? ((totalKg - currentTier.minKg) / (nextTier!.minKg - currentTier.minKg))
-            .clamp(0.0, 1.0)
+        ? ((totalKg - currentTier.minKg) /
+                  (nextTier!.minKg - currentTier.minKg))
+              .clamp(0.0, 1.0)
         : 1.0;
     final remainingKg = nextTier != null
         ? (nextTier!.minKg - totalKg).clamp(0, double.infinity)
@@ -174,16 +179,23 @@ class _LevelSummaryCard extends StatelessWidget {
                   color: currentTier.color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(currentTier.icon, color: currentTier.color, size: 28),
+                child: Icon(
+                  currentTier.icon,
+                  color: currentTier.color,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Level Aktif',
-                        style: AppTextStyles.caption
-                            .copyWith(color: AppColors.primary)),
+                    Text(
+                      'Level Aktif',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(currentTier.name, style: AppTextStyles.h1),
                   ],
@@ -194,13 +206,16 @@ class _LevelSummaryCard extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              Text('${totalKg.toStringAsFixed(0)} kg ',
-                  style: AppTextStyles.bodyBold),
+              Text(
+                '${totalKg.toStringAsFixed(0)} kg ',
+                style: AppTextStyles.bodyBold,
+              ),
               Text('teralihkan', style: AppTextStyles.captionMuted),
               const SizedBox(width: 12),
               Text(
-                  '${NumberFormat.decimalPattern('id_ID').format(poin)} poin',
-                  style: AppTextStyles.bodyBold),
+                '${NumberFormat.decimalPattern('id_ID').format(poin)} poin',
+                style: AppTextStyles.bodyBold,
+              ),
             ],
           ),
           if (nextTier != null) ...[
@@ -208,10 +223,16 @@ class _LevelSummaryCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Menuju ${nextTier!.name}', style: AppTextStyles.bodySmall),
-                Text('${remainingKg.toStringAsFixed(0)} kg lagi',
-                    style: AppTextStyles.bodyBold
-                        .copyWith(color: AppColors.primary)),
+                Text(
+                  'Menuju ${nextTier!.name}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                Text(
+                  '${remainingKg.toStringAsFixed(0)} kg lagi',
+                  style: AppTextStyles.bodyBold.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -228,15 +249,22 @@ class _LevelSummaryCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${totalKg.toStringAsFixed(0)} kg',
-                    style: AppTextStyles.captionMuted),
-                Text('${nextTier!.minKg} kg', style: AppTextStyles.captionMuted),
+                Text(
+                  '${totalKg.toStringAsFixed(0)} kg',
+                  style: AppTextStyles.captionMuted,
+                ),
+                Text(
+                  '${nextTier!.minKg} kg',
+                  style: AppTextStyles.captionMuted,
+                ),
               ],
             ),
           ] else ...[
             const SizedBox(height: 14),
-            Text('Level tertinggi tercapai! Terus jaga konsistensimu.',
-                style: AppTextStyles.captionMuted),
+            Text(
+              'Level tertinggi tercapai! Terus jaga konsistensimu.',
+              style: AppTextStyles.captionMuted,
+            ),
           ],
         ],
       ),
@@ -298,8 +326,10 @@ class _TierTile extends StatelessWidget {
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: Text('Aktif',
-                  style: AppTextStyles.caption.copyWith(color: Colors.white)),
+              child: Text(
+                'Aktif',
+                style: AppTextStyles.caption.copyWith(color: Colors.white),
+              ),
             )
           else
             const Icon(Icons.lock_rounded, color: AppColors.textMuted),
@@ -322,8 +352,10 @@ class _RiwayatSection extends ConsumerWidget {
       data: (txs) {
         if (txs.isEmpty) {
           return AppCard(
-            child: Text('Belum ada riwayat poin.',
-                style: AppTextStyles.captionMuted),
+            child: Text(
+              'Belum ada riwayat poin.',
+              style: AppTextStyles.captionMuted,
+            ),
           );
         }
         return AppCard(
@@ -343,8 +375,10 @@ class _RiwayatSection extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, _) => Text('Gagal memuat riwayat.',
-          style: AppTextStyles.captionMuted.copyWith(color: AppColors.error)),
+      error: (_, _) => Text(
+        'Gagal memuat riwayat.',
+        style: AppTextStyles.captionMuted.copyWith(color: AppColors.error),
+      ),
     );
   }
 }

@@ -122,7 +122,8 @@ class StaticInfoScreen extends StatelessWidget {
     if (slug == 'faq') return const _FaqView();
     if (slug == 'tentang') return const _TentangView();
 
-    final content = _content[slug] ??
+    final content =
+        _content[slug] ??
         const _InfoContent('SisaPedia', 'Konten belum tersedia.');
 
     return Scaffold(
@@ -132,7 +133,10 @@ class StaticInfoScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Text(
           content.body,
-          style: AppTextStyles.body.copyWith(color: AppColors.textSecondary, height: 1.6),
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.6,
+          ),
         ),
       ),
     );
@@ -156,19 +160,22 @@ class _FaqView extends StatelessWidget {
           return AppCard(
             padding: EdgeInsets.zero,
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 iconColor: AppColors.primary,
                 collapsedIconColor: AppColors.textSecondary,
                 title: Text(item.question, style: AppTextStyles.bodyBold),
-                childrenPadding:
-                    const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 expandedCrossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     item.answer,
-                    style: AppTextStyles.body
-                        .copyWith(color: AppColors.textSecondary, height: 1.6),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.6,
+                    ),
                   ),
                 ],
               ),
@@ -199,7 +206,11 @@ class _TentangView extends StatelessWidget {
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Icon(Icons.eco_rounded, color: Colors.white, size: 32),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
             const SizedBox(height: 16),
             Text('SisaPedia', style: AppTextStyles.h1),
@@ -210,8 +221,10 @@ class _TentangView extends StatelessWidget {
               Text(
                 paragraph,
                 textAlign: TextAlign.left,
-                style: AppTextStyles.body
-                    .copyWith(color: AppColors.textSecondary, height: 1.6),
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.6,
+                ),
               ),
               const SizedBox(height: 14),
             ],
@@ -267,8 +280,10 @@ class _TentangStatTile extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value,
-              style: AppTextStyles.h2.copyWith(color: valueColor, fontSize: 18)),
+          Text(
+            value,
+            style: AppTextStyles.h2.copyWith(color: valueColor, fontSize: 18),
+          ),
           const SizedBox(height: 4),
           Text(
             label,

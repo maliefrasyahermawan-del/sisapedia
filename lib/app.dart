@@ -15,6 +15,13 @@ class SisaPediaApp extends ConsumerWidget {
       title: 'SisaPedia',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      // Keep edge scrolling stable on Android. Material 3's default
+      // StretchingOverscrollIndicator makes the whole screen appear to
+      // deform when a user reaches the end of a list or form.
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        overscroll: false,
+        physics: const ClampingScrollPhysics(),
+      ),
       routerConfig: router,
     );
   }

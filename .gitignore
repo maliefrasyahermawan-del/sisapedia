@@ -31,6 +31,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+android/build/
 /coverage/
 
 # Symbolication related
@@ -43,9 +44,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/key.properties
+android/*.jks
+android/*.keystore
 
 # Secrets — never commit real API keys. Copy .env.example to .env instead.
 .env
 
 # Claude Code local session/tooling state — not part of the project.
 .claude/
+# Supabase local CLI cache; never commit generated state.
+supabase/.temp/

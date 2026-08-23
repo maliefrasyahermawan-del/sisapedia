@@ -28,8 +28,11 @@ class BottomNavScaffold extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/sari-chat'),
         backgroundColor: AppColors.textPrimary,
-        icon: const Icon(Icons.auto_awesome_rounded,
-            color: Colors.white, size: 18),
+        icon: const Icon(
+          Icons.auto_awesome_rounded,
+          color: Colors.white,
+          size: 18,
+        ),
         label: const Text('Sari', style: TextStyle(color: Colors.white)),
       ),
       bottomNavigationBar: DecoratedBox(
@@ -50,8 +53,10 @@ class BottomNavScaffold extends ConsumerWidget {
                         icon: _items[0].icon,
                         label: _items[0].label,
                         selected: shell.currentIndex == 0,
-                        onTap: () => shell.goBranch(0,
-                            initialLocation: shell.currentIndex == 0),
+                        onTap: () => shell.goBranch(
+                          0,
+                          initialLocation: shell.currentIndex == 0,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -59,8 +64,10 @@ class BottomNavScaffold extends ConsumerWidget {
                         icon: _items[1].icon,
                         label: _items[1].label,
                         selected: shell.currentIndex == 1,
-                        onTap: () => shell.goBranch(1,
-                            initialLocation: shell.currentIndex == 1),
+                        onTap: () => shell.goBranch(
+                          1,
+                          initialLocation: shell.currentIndex == 1,
+                        ),
                       ),
                     ),
                     const Expanded(child: SizedBox()),
@@ -69,8 +76,10 @@ class BottomNavScaffold extends ConsumerWidget {
                         icon: _items[2].icon,
                         label: _items[2].label,
                         selected: shell.currentIndex == 2,
-                        onTap: () => shell.goBranch(2,
-                            initialLocation: shell.currentIndex == 2),
+                        onTap: () => shell.goBranch(
+                          2,
+                          initialLocation: shell.currentIndex == 2,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -78,8 +87,10 @@ class BottomNavScaffold extends ConsumerWidget {
                         icon: _items[3].icon,
                         label: _items[3].label,
                         selected: shell.currentIndex == 3,
-                        onTap: () => shell.goBranch(3,
-                            initialLocation: shell.currentIndex == 3),
+                        onTap: () => shell.goBranch(
+                          3,
+                          initialLocation: shell.currentIndex == 3,
+                        ),
                       ),
                     ),
                   ],
@@ -168,8 +179,10 @@ class _SetorCerdasButton extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Setor Cerdas',
-            style: AppTextStyles.captionMuted
-                .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+            style: AppTextStyles.captionMuted.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),

@@ -1,0 +1,4 @@
+project_id = "sisapedia"
+
+[functions.sari-proxy]
+verify_jwt = true

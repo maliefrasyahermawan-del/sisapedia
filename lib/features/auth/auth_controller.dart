@@ -3,8 +3,8 @@ import '../../core/providers/repository_providers.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
-  return AuthController(ref);
-});
+      return AuthController(ref);
+    });
 
 class AuthController extends StateNotifier<AsyncValue<void>> {
   AuthController(this._ref) : super(const AsyncData(null));
@@ -29,12 +29,13 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     required String name,
     required String email,
     required String password,
+    String role = 'sumber',
   }) async {
     state = const AsyncLoading();
     try {
       await _ref
           .read(authRepositoryProvider)
-          .register(name: name, email: email, password: password);
+          .register(name: name, email: email, password: password, role: role);
       state = const AsyncData(null);
       return true;
     } catch (e, st) {

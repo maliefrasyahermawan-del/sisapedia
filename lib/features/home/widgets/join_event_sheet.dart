@@ -106,8 +106,9 @@ class _JoinEventFormState extends State<_JoinEventForm> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Nama'),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Nama wajib diisi' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Nama wajib diisi'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -137,8 +138,11 @@ class _JoinEventFormState extends State<_JoinEventForm> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded,
-                        size: 14, color: AppColors.textMuted),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(

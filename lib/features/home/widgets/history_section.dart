@@ -29,8 +29,10 @@ class HistorySection extends ConsumerWidget {
         submissionsAsync.when(
           data: (submissions) {
             if (submissions.isEmpty) {
-              return Text('Belum ada setoran. Yuk mulai setor sampahmu!',
-                  style: AppTextStyles.captionMuted);
+              return Text(
+                'Belum ada setoran. Yuk mulai setor sampahmu!',
+                style: AppTextStyles.captionMuted,
+              );
             }
             return Column(
               children: [
@@ -65,8 +67,10 @@ class HistorySection extends ConsumerWidget {
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (_, _) => Text('Gagal memuat riwayat.',
-              style: AppTextStyles.captionMuted.copyWith(color: AppColors.error)),
+          error: (_, _) => Text(
+            'Gagal memuat riwayat.',
+            style: AppTextStyles.captionMuted.copyWith(color: AppColors.error),
+          ),
         ),
       ],
     );

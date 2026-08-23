@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/utils/firebase_error_mapper.dart';
+import '../../core/utils/auth_error_mapper.dart';
 import 'auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -20,6 +20,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  String _role = 'sumber';
 
   @override
   void dispose() {
@@ -31,10 +32,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final ok = await ref.read(authControllerProvider.notifier).register(
+    final ok = await ref
+        .read(authControllerProvider.notifier)
+        .register(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
+          role: _role,
         );
     if (!ok && mounted) {
       final error = ref.read(authControllerProvider).error;
@@ -42,12 +46,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         SnackBar(content: Text(mapAuthError(error ?? Exception()))),
       );
     }
-  }
-
-  void _pengolahComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Segera hadir untuk role Pengolah.')),
-    );
   }
 
   @override
@@ -68,7 +66,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF14B881), AppColors.primary, Color(0xFF06603F)],
+                  colors: [
+                    Color(0xFF14B881),
+                    AppColors.primary,
+                    Color(0xFF06603F),
+                  ],
                 ),
               ),
               child: Row(
@@ -83,13 +85,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         color: Colors.white.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_rounded,
-                          color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Daftar Akun Baru',
-                      style: AppTextStyles.brand.copyWith(fontSize: 18)),
+                  Text(
+                    'Daftar Akun Baru',
+                    style: AppTextStyles.brand.copyWith(fontSize: 18),
+                  ),
                 ],
               ),
             ),
@@ -106,8 +113,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _nameController,
-                      decoration:
-                          const InputDecoration(hintText: 'Nama sesuai KTP'),
+                      decoration: const InputDecoration(
+                        hintText: 'Nama sesuai KTP',
+                      ),
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Nama wajib diisi'
                           : null,
@@ -118,8 +126,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration:
-                          const InputDecoration(hintText: '08xx-xxxx-xxxx'),
+                      decoration: const InputDecoration(
+                        hintText: '08xx-xxxx-xxxx',
+                      ),
                       validator: (v) => (v == null || !v.contains('@'))
                           ? 'Masukkan email yang valid'
                           : null,
@@ -133,11 +142,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       decoration: InputDecoration(
                         hintText: 'Minimal 6 karakter',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined),
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
                           onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
                       validator: (v) => (v == null || v.length < 6)
@@ -157,19 +169,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       icon: Icons.person_rounded,
                       title: 'Saya Sumber',
                       subtitle: 'Rumah tangga, vendor pasar, UMKM makanan',
-                      selected: true,
-                      onTap: () {},
+                      selected: _role == 'sumber',
+                      onTap: () => setState(() => _role = 'sumber'),
                     ),
                     const SizedBox(height: 10),
                     _RoleCard(
                       icon: Icons.inventory_2_rounded,
                       title: 'Saya Pengolah',
                       subtitle: 'Bank sampah, pengompos, BSF, pengepul',
-                      selected: false,
-                      trailing: Text('Segera hadir',
-                          style: AppTextStyles.captionMuted.copyWith(
-                              fontStyle: FontStyle.italic)),
-                      onTap: _pengolahComingSoon,
+                      selected: _role == 'pengolah',
+                      onTap: () => setState(() => _role = 'pengolah'),
                     ),
                     const SizedBox(height: 28),
                     SizedBox(
@@ -218,7 +227,6 @@ class _RoleCard extends StatelessWidget {
     required this.subtitle,
     required this.selected,
     required this.onTap,
-    this.trailing,
   });
 
   final IconData icon;
@@ -226,7 +234,6 @@ class _RoleCard extends StatelessWidget {
   final String subtitle;
   final bool selected;
   final VoidCallback onTap;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +285,6 @@ class _RoleCard extends StatelessWidget {
                 ],
               ),
             ),
-            ?trailing,
           ],
         ),
       ),

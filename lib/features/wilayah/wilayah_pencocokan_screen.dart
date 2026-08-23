@@ -33,14 +33,16 @@ class _WilayahPencocokanScreenState
       appBar: AppBar(title: const Text('Wilayah Pencocokan')),
       body: partnersAsync.when(
         data: (partners) {
-          final kecamatanList = partners
-              .map((p) => p.kecamatan)
-              .where((k) => k.isNotEmpty)
-              .toSet()
-              .toList()
-            ..sort();
-          _selectedKecamatan ??=
-              kecamatanList.isNotEmpty ? kecamatanList.first : null;
+          final kecamatanList =
+              partners
+                  .map((p) => p.kecamatan)
+                  .where((k) => k.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort();
+          _selectedKecamatan ??= kecamatanList.isNotEmpty
+              ? kecamatanList.first
+              : null;
 
           final filtered = partners
               .where((p) => p.kecamatan == _selectedKecamatan)
@@ -83,9 +85,8 @@ class _WilayahPencocokanScreenState
                         fontWeight: FontWeight.w700,
                       ),
                       side: BorderSide(
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.border),
+                        color: selected ? AppColors.primary : AppColors.border,
+                      ),
                     );
                   },
                 ),
@@ -102,8 +103,10 @@ class _WilayahPencocokanScreenState
               Expanded(
                 child: filtered.isEmpty
                     ? Center(
-                        child: Text('Belum ada mitra di wilayah ini.',
-                            style: AppTextStyles.captionMuted),
+                        child: Text(
+                          'Belum ada mitra di wilayah ini.',
+                          style: AppTextStyles.captionMuted,
+                        ),
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -115,8 +118,8 @@ class _WilayahPencocokanScreenState
                           return _PartnerTile(
                             partner: partner,
                             selected: selected,
-                            onTap: () => setState(
-                                () => _selectedPartnerId = partner.id),
+                            onTap: () =>
+                                setState(() => _selectedPartnerId = partner.id),
                           );
                         },
                       ),
@@ -150,8 +153,10 @@ class _WilayahPencocokanScreenState
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Center(
-          child: Text('Gagal memuat daftar mitra.',
-              style: AppTextStyles.captionMuted),
+          child: Text(
+            'Gagal memuat daftar mitra.',
+            style: AppTextStyles.captionMuted,
+          ),
         ),
       ),
     );
@@ -214,8 +219,11 @@ class _PartnerTile extends StatelessWidget {
                 color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.storefront_rounded,
-                  color: AppColors.primary, size: 18),
+              child: const Icon(
+                Icons.storefront_rounded,
+                color: AppColors.primary,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

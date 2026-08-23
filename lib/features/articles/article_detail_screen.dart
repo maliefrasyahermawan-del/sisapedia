@@ -20,13 +20,16 @@ class ArticleDetailScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Artikel')),
       body: articlesAsync.when(
         data: (articles) {
-          final article = articles
-              .cast<ArticleModel?>()
-              .firstWhere((a) => a?.id == articleId, orElse: () => null);
+          final article = articles.cast<ArticleModel?>().firstWhere(
+            (a) => a?.id == articleId,
+            orElse: () => null,
+          );
           if (article == null) {
             return Center(
-              child: Text('Artikel tidak ditemukan.',
-                  style: AppTextStyles.captionMuted),
+              child: Text(
+                'Artikel tidak ditemukan.',
+                style: AppTextStyles.captionMuted,
+              ),
             );
           }
           return SingleChildScrollView(
@@ -34,19 +37,27 @@ class ArticleDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('ARTIKEL',
-                    style: AppTextStyles.caption
-                        .copyWith(color: AppColors.primary)),
+                Text(
+                  'ARTIKEL',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(article.title, style: AppTextStyles.h1),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.schedule_rounded,
-                        size: 14, color: AppColors.textMuted),
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
                     const SizedBox(width: 4),
-                    Text('${article.readTimeMinutes} menit baca',
-                        style: AppTextStyles.captionMuted),
+                    Text(
+                      '${article.readTimeMinutes} menit baca',
+                      style: AppTextStyles.captionMuted,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -54,18 +65,21 @@ class ArticleDetailScreen extends ConsumerWidget {
                   article.content.isNotEmpty
                       ? article.content
                       : article.summary,
-                  style: AppTextStyles.body
-                      .copyWith(color: AppColors.textSecondary, height: 1.7),
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.7,
+                  ),
                 ),
               ],
             ),
           );
         },
-        loading: () =>
-            const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => Center(
-          child: Text('Gagal memuat artikel.',
-              style: AppTextStyles.captionMuted),
+          child: Text(
+            'Gagal memuat artikel.',
+            style: AppTextStyles.captionMuted,
+          ),
         ),
       ),
     );

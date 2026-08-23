@@ -1,259 +1,79 @@
-# SisaPedia — Progress Save Point
+# SisaPedia implementation status
 
-> Dokumen ini dibaca dulu di sesi baru sebelum menyentuh kode. Isinya: cara
-> build/extract APK, peta file penting, keputusan desain sesi ini, dan config
-> yang perlu disiapkan manual. Update terakhir: **22 Agustus 2026**.
+The current implementation is Supabase-ready and Preview-first. Preview Mode
+is the competition path: it persists a versioned local domain snapshot,
+reacts through repository streams, and seeds deterministic Semarang identities
+(Bu Siti, Pak Bambang, DLH, and Admin) with organic and inorganic examples.
 
-## 1. Status singkat
+## Delivered
 
-Fase 1 — role **Sumber** (warga/pemilah sampah) saja. Role Pengolah &
-DLH-Admin belum dikerjakan (lihat Bagian 5). Register sudah punya UI pilihan
-role ("Saya Sumber" / "Saya Pengolah") tapi "Saya Pengolah" sengaja
-non-fungsional ("Segera hadir") — semua akun baru tetap terdaftar sebagai
-Sumber.
+- Four role shells with role-specific navigation and modular screens:
+  Sumber, Pengolah, DLH, and Admin.
+- Submission lifecycle, deterministic matching, timed offers with fallback,
+  pickup/en-route/weighing evidence, confirmation/dispute, capacity, points,
+  redeem review, notifications, and audit records in Preview repositories.
+- Supabase migrations for role immutability, narrow RPC workflows, RLS,
+  aggregate-only DLH metrics, protected precise locations, Storage policies,
+  retention cleanup, server-provisioned privileged roles, explicit client read
+  grants, processor facility coordinates/evidence, candidate provenance, and
+  versioned DLH aggregate components and completion-month filtering.
+- Sari chat, insight, and typed/voice waste extraction are OmniRoute
+  live-first in Preview Mode, with editable confirmation and deterministic
+  local fallback. The client accepts both OpenAI JSON completions and streamed
+  SSE delta responses, including fenced/wrapped JSON.
+- Android debug and release APKs are verified in the final gate when release signing environment variables are present; no keystore is tracked.
 
-Checkpoint git: lihat `git log --oneline -3`. Commit terakhir mencakup patch
-sesi **22 Agustus 2026**: redesign Beranda header/kartu poin + layar sukses
-setor + Login/Daftar sesuai referensi desain, dan login "Tamu"/"Akun
-Testing" baru (lihat Bagian 4).
+## Verification
 
-## 2. Cara build & extract APK
+From the repository root:
 
-App ini punya dua mode jalan:
-
-- **Mode normal** (produksi/dev asli): butuh Firebase project + Groq API key
-  sendiri (lihat `README.md` Bagian "Setup wajib").
-- **Mode Preview** (`PREVIEW_MODE=true`): jalan 100% dari data mock di
-  `lib/core/preview/preview_mode.dart`, tidak butuh Firebase/Groq sama
-  sekali. **Ini mode yang dipakai untuk semua APK yang sudah di-generate dan
-  divalidasi di sesi-sesi sebelumnya.**
-
-```bash
-cd "D:\Portofolio Alif 2\Project 55 - SisaPedia Mobile App"
-flutter pub get
-flutter analyze --no-fatal-infos      # pastikan bersih sebelum build
-flutter build apk --release --dart-define=PREVIEW_MODE=true
+```powershell
+& C:\Ez\Tools\flutter\bin\dart.bat format lib test
+& C:\Ez\Tools\flutter\bin\flutter.bat analyze
+& C:\Ez\Tools\flutter\bin\flutter.bat test
+& C:\Ez\Tools\flutter\bin\flutter.bat build apk --debug --dart-define=PREVIEW_MODE=true
 ```
 
-Hasil APK selalu di path yang sama (build ulang menimpa file lama):
+The current Flutter test suite contains 43 passing tests covering matching, lifecycle,
+organic/inorganic end-to-end Preview flows, role authorization, persistence,
+reactivity, per-submission candidate IDs/fallback, content moderation,
+Sari-to-manual prefill, OmniRoute JSON/SSE parsing and fallback, migration/DTO
+contracts, and role navigation widgets.
+The disposable local Supabase pgTAP suite contains 54 passing actor/RLS and
+schema assertions, including destructive-privilege denial, scoped source
+evidence upload/read, and retention outbox contracts. Release signing setup is documented in README.md; no
+keystore is tracked.
 
-```
-build\app\outputs\flutter-apk\app-release.apk
-```
+## Configuration and operations
 
-Build terakhir (22 Agustus 2026, mode normal/non-preview): **56.2MB**,
-berhasil, `flutter analyze` bersih. Ada 1 warning Gradle soal Kotlin Gradle
-Plugin (`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan
-untuk saat ini.
+Normal mode uses Supabase dart-defines (`SUPABASE_URL` and
+`SUPABASE_PUBLISHABLE_KEY`). Backend-only 9Router/OmniRoute secrets belong in
+the Sari Edge Function environment, never in the mobile bundle. Apply
+`supabase/migrations` and the versioned Storage policies before normal-mode
+use; provision DLH/Admin accounts server-side. Deploy the `retention-cleanup`
+Edge Function daily; it calls `public.retention_cleanup()` for the 90-day
+precise-location/evidence policy and removes returned objects using the
+Storage API.
 
-> Catatan: login "Masuk sebagai Akun Testing" (Bagian 4) sekarang jadi cara
-> paling gampang untuk lihat app terisi data mock **tanpa** perlu build
-> `--dart-define=PREVIEW_MODE=true` — cukup build/`flutter run` mode normal
-> lalu tekan tombol itu di layar Login. `PREVIEW_MODE` compile-time tetap ada
-> dan tidak berubah perilakunya (dipakai kalau mau APK yang *selalu* mock
-> dari awal buka app, tanpa harus lewat tombol Login).
+Storage ACLs are owner-managed by Supabase's reserved
+`supabase_storage_admin`; hosted deployment and the local disposable DB test
+must execute the owner-session revoke block before asserting inherited storage
+privileges.
+The deterministic Preview OTP is `246810`; no external credentials are
+needed for Preview.
 
-Untuk jalan langsung ke device/emulator tanpa build APK:
-```bash
-flutter run --dart-define=PREVIEW_MODE=true
-```
+For a jury-only Preview APK, OmniRoute can be supplied at build time with
+`OMNIROUTE_APP_SECRET`, `OMNIROUTE_BASE_URL`, and `OMNIROUTE_MODEL`. The
+Gatekeeper endpoint defaults to `counting-christine-geometry-tricks.trycloudflare.com`.
+A
+`trycloudflare.com` quick-tunnel hostname is ephemeral and must be replaced or
+kept alive before the demo; when it is unreachable, Sari falls back locally.
 
-## 3. Peta file penting
+Generated `android/build` and `supabase/.temp` artifacts are ignored and are
+not part of the deliverable. Marketplace checkout remains intentionally out
+of scope; product and event content is informational/core-flow only.
 
-```
-lib/
-  app.dart                          — root MaterialApp.router (banner PRATINJAU sudah dihapus)
-  main.dart                         — entrypoint, load .env, init Firebase (dilewati kalau PREVIEW_MODE)
-  core/
-    preview/
-      fake_repositories.dart        — BARU (22 Agt): semua kelas Fake*Repository + data mock,
-                                       dipindah keluar dari preview_mode.dart supaya bisa dipakai
-                                       runtime (login Akun Testing) TANPA circular import
-      preview_mode.dart             — sekarang cuma `kPreviewMode` flag + `previewModeOverrides`
-                                       (compile-time), datanya sendiri ada di fake_repositories.dart
-    session/                        — BARU (22 Agt): infra login Tamu/Akun Testing
-      session_mode.dart             — `SessionMode` enum (normal/guest/demo) + `sessionModeProvider`
-                                       + `kGuestUid`/`guestUserModel`
-      guest_gate.dart                — dialog "Anda Belum Terdaftar" dipakai saat tamu coba setor
-    utils/level_utils.dart          — BARU (22 Agt): `LevelProgress.fromPoin()`, hitung level/ring
-                                       progress dari poinSirkular (presentasi saja, tiap 2000 poin
-                                       naik 1 level) — dipakai kartu poin Beranda & layar sukses setor
-    providers/
-      data_providers.dart           — provider Riverpod untuk articles/partners/events/dashboard
-      notification_providers.dart   — state notifikasi (seed + markAllRead)
-      repository_providers.dart     — tiap repo provider sekarang cek `sessionModeProvider`: demo
-                                       → Fake*Repository (dari fake_repositories.dart), guest →
-                                       `userProfileProvider` balik `guestUserModel` langsung, normal
-                                       → repository Firestore asli
-    router/app_router.dart          — redirect guard sekarang juga cek sessionMode (tamu/demo lolos
-                                       tanpa uid Firebase asli); route BARU: /setor/sukses
-    services/groq_service.dart      — GroqService.chat() (chat Sari penuh, terpisah dari
-                                       generateInsight() untuk Insight AI Dashboard)
-    theme/                          — app_colors.dart (+ accent700/800/900, levelBadge BARU),
-                                       app_text_styles.dart, app_theme.dart
-  data/
-    geo/semarang_boundary.dart      — 194 titik lat/lng batas administratif Kota Semarang
-                                       (dari OSM/Nominatim, disederhanakan RDP eps=0.0012)
-    models/                         — semua model data (ArticleModel.content sudah diisi mock)
-    repositories/                   — implementasi asli (Firestore), dipakai kalau sessionMode normal
-  features/
-    home/
-      beranda_screen.dart           — uid Beranda sekarang fallback ke `kGuestUid` saat tamu supaya
-                                       layar tidak stuck loading
-      widgets/beranda_header.dart   — REDESIGN (22 Agt): gradasi hijau, salam berbasis jam
-                                       (pagi/siang/sore/malam), sesuai referensi desain
-      widgets/points_card.dart      — REDESIGN (22 Agt): kartu gradasi hijau tua + ring progress
-                                       level, badge "LV. n", label "PENGUMPUL RAJIN" — ganti total
-                                       dari kartu putih lama (tombol Share dihapus, tidak ada di
-                                       referensi)
-    setor_manual/
-      setor_form_screen.dart        — submit sekarang: (1) blokir tamu → `showGuestRegisterGate()`
-                                       lalu redirect /register, (2) sukses → push `/setor/sukses`
-                                       (dulu cuma snackbar+pop)
-      setor_success_screen.dart     — BARU (22 Agt): layar sukses full-screen, estimasi poin +
-                                       status "menunggu verifikasi" (BUKAN angka final, karena poin
-                                       asli baru masuk setelah admin verifikasi submission)
-    auth/
-      login_screen.dart             — REDESIGN (22 Agt) sesuai referensi HTML + tombol baru "Masuk
-                                       sebagai Tamu" dan "Masuk sebagai Akun Testing"
-      register_screen.dart          — REDESIGN (22 Agt) sesuai referensi HTML + role card "Saya
-                                       Sumber"/"Saya Pengolah" (Pengolah non-fungsional, lihat Bag. 1)
-    map/peta_screen.dart            — peta interaktif, PolygonLayer garis merah batas Semarang
-    wilayah/wilayah_pencocokan_screen.dart  — alternatif list (bukan peta) untuk pilih mitra
-    sari_chat/sari_chat_screen.dart — layar chat penuh dengan Sari (pakai GroqService.chat)
-    notifications/notifications_screen.dart
-    articles/article_detail_screen.dart
-    profile/
-      panduan_screen.dart           — accordion 7 bagian panduan lengkap
-      profil_screen.dart            — tombol Keluar sekarang reset sessionMode ke normal juga
-                                       (bukan cuma signOut Firebase), supaya tamu/akun testing bisa
-                                       "keluar" balik ke Login sungguhan
-    shared/widgets/bottom_nav_scaffold.dart — FAB "Sari" mengambang di semua tab (mic nonaktif
-                                       otomatis untuk tamu, karena uid Firebase asli null)
-```
-
-## 4. Ringkasan patch sesi 19 Agustus 2026 (urut sesuai permintaan)
-
-**Batch 1 — bug visual awal:**
-- Header Beranda dibungkus `SafeArea` (dulu bentrok status bar).
-- Artikel jadi bisa diklik → `ArticleDetailScreen` baru dengan isi lengkap
-  (3 artikel diisi konten penuh di `preview_mode.dart`).
-- Dashboard "Saya" vs "Kota Semarang" dibedakan — ditambah ~42 submission
-  mock dari 9 warga lain supaya scope kota beda dari scope personal.
-- Fitur notifikasi ditambah (bell + badge + `NotificationsScreen`).
-
-**Batch 2 — bug lanjutan + fitur baru:**
-- Card Poin Sirkular yang ketutup header dihapus efek `Transform.translate`-nya.
-- Ribbon "PRATINJAU" dihapus total dari `app.dart`.
-- Tombol "Gabung" Movement sekarang buka form (`join_event_sheet.dart`):
-  Nama, No. HP/WA, Motivasi → baru submit. **Belum ada backend nyata ke
-  akun Pengolah** (memang sengaja ditunda per instruksi user), tapi form +
-  UX submit sudah lengkap.
-- Chatbot Sari diimplementasikan nyata: FAB mengambang di semua tab →
-  `SariChatScreen`, pakai `GroqService.chat()` (real API kalau `.env` ada
-  `GROQ_API_KEY`; fallback jawaban mock berbasis keyword di
-  `FakeGroqService.chat()` untuk build preview).
-- "Wilayah Pencocokan" tidak lagi lempar ke tab Peta, sekarang buka layar
-  list terpisah dengan tab kecamatan (Tembalang/Semarang Tengah/Semarang
-  Selatan) — lebih ringan render-nya dibanding peta interaktif.
-- Panduan diganti jadi accordion 7 bagian (Registrasi, Pickup Sampah, Drop
-  Off Sampah, Company dan Event, Menjadi Mitra, Poin & Level Sirkular,
-  Jenis dan Harga Sampah).
-
-**Batch 3 — garis batas kota di peta:**
-- `PolygonLayer` merah (`#DC2626`, border 2.5px, tanpa fill) mengikuti
-  batas administratif asli Kota Semarang, bukan bentuk perkiraan/kasar.
-  Data diambil dari Nominatim (`nominatim.openstreetmap.org/search`,
-  `polygon_geojson=1`), disederhanakan dari 2.585 → 194 titik.
-
-## 4b. Ringkasan patch sesi 22 Agustus 2026
-
-Sumber desain: 3 screenshot referensi (Beranda header + kartu poin, layar
-sukses setor) dan file `SisaPedia - Standalone Export.html` (mockup HTML
-untuk Login & Daftar). **Sesuai instruksi user, HANYA layar-layar ini yang
-didesain ulang** — tidak ada layar lain di mockup yang ikut diterapkan.
-
-- **Beranda**: header + kartu poin didesain ulang total mengikuti referensi
-  (ring progress level, badge "LV. n", label "PENGUMPUL RAJIN"). Level
-  dihitung murni presentasi dari `poinSirkular` (`level_utils.dart`), bukan
-  field baru di backend.
-- **Layar sukses setor** (`setor_success_screen.dart`, route baru
-  `/setor/sukses`): checkmark besar + "Mantap, {nama}!" + kartu poin.
-  Diputuskan bareng user: angka poin yang tampil **estimasi**, bukan final
-  — karena poin sungguhan baru ditambahkan setelah admin/pengolah
-  memverifikasi submission (statusnya masih `pending` saat submit). Cuma
-  dipasang di alur **Setor Manual**; Setor Cerdas (voice, multi-item) tetap
-  pakai pop biasa seperti sebelumnya karena copy layar sukses ini didesain
-  untuk satu item.
-- **Login & Daftar**: didesain ulang mengikuti mockup HTML (header gradasi
-  hijau, field, tombol pill). Daftar dapat kartu pilih role "Saya
-  Sumber"/"Saya Pengolah" dari mockup — diputuskan bareng user: "Saya
-  Pengolah" tetap tampil tapi non-fungsional ("Segera hadir"), karena app
-  masih fase 1 Sumber-only; submit tetap daftar sebagai Sumber.
-- **Login "Masuk sebagai Tamu"** (baru, bukan dari mockup — permintaan
-  terpisah user): `sessionModeProvider` di-set ke `guest`, masuk tanpa data
-  nyata (`guestUserModel`, uid sintetis `guest-local`). Begitu tamu pilih
-  jenis sampah di Setor Manual lalu tekan submit, muncul dialog "Anda
-  Belum Terdaftar" dan diarahkan ke `/register`. Tombol mic "Setor Cerdas"
-  otomatis nonaktif untuk tamu (karena butuh uid Firebase asli).
-- **Login "Masuk sebagai Akun Testing"** (baru, bukan dari mockup):
-  `sessionModeProvider` di-set ke `demo`, semua repository provider otomatis
-  switch ke `Fake*Repository` yang sudah ada di `fake_repositories.dart`
-  (data yang sama persis dipakai build `PREVIEW_MODE`) — jadi seluruh app
-  (Beranda, Dashboard, Peta, riwayat, dsb) langsung terisi data mock tanpa
-  perlu build ulang dengan `--dart-define`.
-- Refactor pendukung: `preview_mode.dart` dipecah jadi
-  `fake_repositories.dart` (data + kelas Fake) supaya bisa dipakai runtime
-  tanpa circular import balik ke `repository_providers.dart`.
-
-## 5. Yang BELUM dikerjakan / diketahui terbatas
-
-- Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
-  sudah menyebut ini dari awal, bukan regresi sesi ini).
-- Form "Gabung Event" baru mengirim ke `joinEvent()` yang sama seperti
-  sebelumnya (menandai partisipasi), belum benar-benar mengalirkan data
-  Nama/Kontak/Motivasi ke sisi akun Pengolah — itu memang ditunda sesuai
-  instruksi user ("tapi nanti aja").
-- Redeem poin ke e-wallet/voucher tetap tidak memproses uang nyata (dari
-  awal, lihat `README.md`).
-- Setor Cerdas (voice) masih pakai `WasteVoiceParser` berbasis regex, BUKAN
-  Groq — ini berbeda dari `SariChatScreen` yang baru (chat teks) yang
-  sudah pakai Groq API sungguhan.
-- Batas kota di peta cuma garis Kota Semarang, belum ada garis
-  kecamatan/versi multi-kota (proposal DSDC menyebut visi nasional, tapi
-  implementasi tetap Semarang-only per desain phase 1).
-- Login "Nomor HP atau Email" cuma label ikut mockup — field & validasinya
-  masih murni email (belum ada login/OTP nomor HP sungguhan).
-- "Lupa kata sandi?" di Login belum ada alurnya (baru snackbar "Segera
-  hadir"), belum reset password Firebase sungguhan.
-- Estimasi poin di layar sukses setor (`beratKg * 10`, dibulatkan) itu
-  formula sementara untuk preview UX — belum tentu sama dengan formula poin
-  final yang dipakai proses verifikasi admin (kalau nanti beda, cukup ubah
-  `_estimatedPoin()` di `setor_success_screen.dart`).
-- Akun "Tamu" & "Akun Testing" cuma state lokal di memori (`sessionModeProvider`),
-  reset otomatis ke `normal` tiap kali tombol "Keluar" di Profil ditekan atau
-  app di-restart — belum ada persist ke local storage.
-
-## 6. Config yang HARUS disiapkan manual (tidak bisa dikerjakan AI)
-
-Sama seperti di `README.md`, dua hal ini butuh akun pribadi:
-
-1. **Firebase** — `flutterfire configure`, aktifkan Authentication
-   (Email/Password) + Firestore. Cuma perlu kalau mau jalan di mode
-   normal (non-preview).
-2. **Groq API key** — daftar di console.groq.com, isi `.env` dari
-   `.env.example`. Tanpa ini pun app tetap jalan (baik mode preview maupun
-   normal), Insight AI dan Sari Chat cuma fallback ke pesan/jawaban mock.
-
-`.env` sudah di-gitignore, jangan pernah commit isinya.
-
-## 7. Cara lanjut kerja di sesi berikutnya
-
-1. Baca file ini dulu.
-2. `git log --oneline` untuk lihat checkpoint terakhir sebelum mulai edit.
-3. `flutter analyze` sebelum dan sesudah perubahan besar.
-4. Build APK preview mode untuk validasi visual (Bagian 2), atau
-   `flutter run --dart-define=PREVIEW_MODE=true` kalau ada device/emulator
-   terhubung untuk iterasi lebih cepat.
-5. Kalau bikin perubahan berarti, commit ke git (`git add lib/ && git
-   commit`) supaya ada checkpoint baru yang bisa di-rollback.
+Red Hat Display/Text variable fonts are bundled under `assets/fonts/` from the
+official Google Fonts repository under the included OFL license. Display
+headings use Red Hat Display and body/UI text uses Red Hat Text; both are
+packaged offline with the APK.

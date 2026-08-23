@@ -1,12 +1,85 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/models/notification_model.dart';
+import '../preview/preview_store.dart';
+import 'repository_providers.dart';
+import '../session/session_mode.dart';
 
 DateTime _hoursAgo(int hours) =>
     DateTime.now().subtract(Duration(hours: hours));
 
 class NotificationsNotifier extends StateNotifier<List<NotificationModel>> {
-  NotificationsNotifier() : super(_seed);
+  NotificationsNotifier({required this.demo, this.uid})
+    : super(demo ? _fromStore() : const []) {
+    if (demo) {
+      _subscription = PreviewStore.changes.listen((_) {
+        state = _fromStore();
+      });
+    } else if (uid != null) {
+      try {
+        _subscription = Supabase.instance.client
+            .from('notifications')
+            .stream(primaryKey: ['id'])
+            .eq('user_id', uid!)
+            .listen((rows) => state = _fromRows(rows));
+      } catch (_) {
+        _subscription = const Stream<int>.empty().listen((_) {});
+      }
+    } else {
+      _subscription = const Stream<int>.empty().listen((_) {});
+    }
+  }
+  final bool demo;
+  final String? uid;
+  late final StreamSubscription<dynamic> _subscription;
+
+  static List<NotificationModel> _fromStore() {
+    final rows = PreviewStore.notifications;
+    if (rows.isEmpty) return _seed;
+    return rows
+        .map(
+          (row) => NotificationModel(
+            id: row['id']?.toString() ?? '',
+            type: switch (row['kind']?.toString()) {
+              'offer' || 'setoran' => NotificationType.setoran,
+              'poin' => NotificationType.poin,
+              'event' => NotificationType.event,
+              _ => NotificationType.sistem,
+            },
+            title: row['title']?.toString() ?? '',
+            body: row['body']?.toString() ?? '',
+            createdAt:
+                DateTime.tryParse(row['created_at']?.toString() ?? '') ??
+                DateTime.now(),
+            isRead: row['read'] == true,
+          ),
+        )
+        .toList();
+  }
+
+  static List<NotificationModel> _fromRows(List<Map<String, dynamic>> rows) =>
+      rows
+          .map(
+            (row) => NotificationModel(
+              id: row['id']?.toString() ?? '',
+              type: switch (row['kind']?.toString()) {
+                'offer' || 'setoran' => NotificationType.setoran,
+                'poin' => NotificationType.poin,
+                'event' => NotificationType.event,
+                _ => NotificationType.sistem,
+              },
+              title: row['title']?.toString() ?? '',
+              body: row['body']?.toString() ?? '',
+              createdAt:
+                  DateTime.tryParse(row['created_at']?.toString() ?? '') ??
+                  DateTime.now(),
+              isRead: row['read_at'] != null,
+            ),
+          )
+          .toList();
 
   static final _seed = <NotificationModel>[
     NotificationModel(
@@ -46,12 +119,36 @@ class NotificationsNotifier extends StateNotifier<List<NotificationModel>> {
 
   void markAllRead() {
     state = [for (final n in state) n.copyWith(isRead: true)];
+    if (demo) {
+      for (final row in PreviewStore.notifications) {
+        row['read'] = true;
+      }
+      PreviewStore.save();
+    }
+    if (!demo && uid != null) {
+      try {
+        Supabase.instance.client
+            .from('notifications')
+            .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+            .eq('user_id', uid!);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }
 
 final notificationsProvider =
     StateNotifierProvider<NotificationsNotifier, List<NotificationModel>>(
-        (ref) => NotificationsNotifier());
+      (ref) => NotificationsNotifier(
+        demo: ref.watch(sessionModeProvider) == SessionMode.demo,
+        uid: ref.watch(currentUidProvider).valueOrNull,
+      ),
+    );
 
 final unreadNotificationsCountProvider = Provider<int>((ref) {
   return ref.watch(notificationsProvider).where((n) => !n.isRead).length;

@@ -42,8 +42,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       appBar: AppBar(title: const Text('Notifikasi')),
       body: notifications.isEmpty
           ? Center(
-              child: Text('Belum ada notifikasi.',
-                  style: AppTextStyles.captionMuted),
+              child: Text(
+                'Belum ada notifikasi.',
+                style: AppTextStyles.captionMuted,
+              ),
             )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -62,7 +64,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 }
 
 class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({required this.notification, required this.timeLabel});
+  const _NotificationTile({
+    required this.notification,
+    required this.timeLabel,
+  });
 
   final NotificationModel notification;
   final String timeLabel;
@@ -80,8 +85,11 @@ class _NotificationTile extends StatelessWidget {
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(notification.type.icon,
-                color: AppColors.primary, size: 20),
+            child: Icon(
+              notification.type.icon,
+              color: AppColors.primary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -91,8 +99,10 @@ class _NotificationTile extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(notification.title,
-                          style: AppTextStyles.bodyBold),
+                      child: Text(
+                        notification.title,
+                        style: AppTextStyles.bodyBold,
+                      ),
                     ),
                     if (!notification.isRead)
                       Container(
@@ -107,9 +117,12 @@ class _NotificationTile extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(notification.body,
-                    style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                Text(
+                  notification.body,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Text(timeLabel, style: AppTextStyles.captionMuted),
               ],

@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Timer(const Duration(milliseconds: 1400), () {
-      if (mounted) context.go('/beranda');
+      if (mounted) context.go('/role');
     });
   }
 
@@ -37,19 +37,27 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(Icons.eco_rounded,
-                  color: AppColors.primary, size: 44),
+              child: const Icon(
+                Icons.eco_rounded,
+                color: AppColors.primary,
+                size: 44,
+              ),
             ),
             const SizedBox(height: 20),
-            Text('SisaPedia',
-                style: AppTextStyles.h1.copyWith(
-                  color: Colors.white,
-                  fontSize: 26,
-                )),
+            Text(
+              'SisaPedia',
+              style: AppTextStyles.h1.copyWith(
+                color: Colors.white,
+                fontSize: 26,
+              ),
+            ),
             const SizedBox(height: 6),
-            Text('Kelola sampah, tumbuhkan dampak sirkular',
-                style: AppTextStyles.body
-                    .copyWith(color: Colors.white.withValues(alpha: 0.85))),
+            Text(
+              'Kelola sampah, tumbuhkan dampak sirkular',
+              style: AppTextStyles.body.copyWith(
+                color: Colors.white.withValues(alpha: 0.85),
+              ),
+            ),
           ],
         ),
       ),

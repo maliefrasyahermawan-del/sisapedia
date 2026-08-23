@@ -26,7 +26,7 @@ class WasteVoiceParseResult {
 /// transcript such as "Saya setor 5 kilo botol plastik dan 2 kilo sisa sayur".
 ///
 /// Kept behind an interface so this regex/keyword implementation can later
-/// be swapped for a Groq-backed parser without touching callers.
+/// be swapped for the Sari gateway without touching callers.
 abstract class WasteVoiceParser {
   WasteVoiceParseResult parse(String transcript);
 }
@@ -79,7 +79,8 @@ class RegexWasteVoiceParser implements WasteVoiceParser {
       String? matchedKeyword;
       for (final keyword in _keywords.keys) {
         if (segment.contains(keyword)) {
-          if (matchedKeyword == null || keyword.length > matchedKeyword.length) {
+          if (matchedKeyword == null ||
+              keyword.length > matchedKeyword.length) {
             matchedKeyword = keyword;
           }
         }
@@ -87,11 +88,13 @@ class RegexWasteVoiceParser implements WasteVoiceParser {
       if (matchedKeyword == null) continue;
 
       final entry = _keywords[matchedKeyword]!;
-      items.add(ParsedWasteItem(
-        subtipe: entry.value,
-        kategori: entry.key,
-        beratKg: double.parse(value.toStringAsFixed(2)),
-      ));
+      items.add(
+        ParsedWasteItem(
+          subtipe: entry.value,
+          kategori: entry.key,
+          beratKg: double.parse(value.toStringAsFixed(2)),
+        ),
+      );
     }
 
     return WasteVoiceParseResult(items: items, isClear: items.isNotEmpty);

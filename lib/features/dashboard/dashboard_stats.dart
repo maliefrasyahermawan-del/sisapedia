@@ -93,14 +93,17 @@ class DashboardStats {
       );
     }).toList();
 
-    final categories = categoryTotals.entries
-        .map((e) => CategoryStat(
-              subtipe: e.key,
-              beratKg: e.value,
-              percent: grandTotal > 0 ? (e.value / grandTotal) * 100 : 0,
-            ))
-        .toList()
-      ..sort((a, b) => b.beratKg.compareTo(a.beratKg));
+    final categories =
+        categoryTotals.entries
+            .map(
+              (e) => CategoryStat(
+                subtipe: e.key,
+                beratKg: e.value,
+                percent: grandTotal > 0 ? (e.value / grandTotal) * 100 : 0,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.beratKg.compareTo(a.beratKg));
 
     return DashboardStats(
       organikThisMonth: organikThisMonth,
@@ -112,17 +115,22 @@ class DashboardStats {
 
   String toAiSummary({required bool isCityScope}) {
     final buffer = StringBuffer();
-    buffer.writeln(isCityScope
-        ? 'Data setoran sampah kota bulan ini:'
-        : 'Data setoran sampah pengguna bulan ini:');
     buffer.writeln(
-        '- Organik: ${organikThisMonth.toStringAsFixed(1)} kg dialihkan dari TPA');
+      isCityScope
+          ? 'Data setoran sampah kota bulan ini:'
+          : 'Data setoran sampah pengguna bulan ini:',
+    );
     buffer.writeln(
-        '- Anorganik: ${anorganikThisMonth.toStringAsFixed(1)} kg dialihkan dari TPA');
+      '- Organik: ${organikThisMonth.toStringAsFixed(1)} kg dialihkan dari TPA',
+    );
+    buffer.writeln(
+      '- Anorganik: ${anorganikThisMonth.toStringAsFixed(1)} kg dialihkan dari TPA',
+    );
     if (categories.isNotEmpty) {
       final top = categories.first;
       buffer.writeln(
-          '- Kategori terbanyak: ${top.subtipe} (${top.percent.toStringAsFixed(0)}%)');
+        '- Kategori terbanyak: ${top.subtipe} (${top.percent.toStringAsFixed(0)}%)',
+      );
     }
     if (monthly.length >= 2) {
       final prev = monthly[monthly.length - 2];
@@ -132,7 +140,8 @@ class DashboardStats {
       if (prevTotal > 0) {
         final change = ((currTotal - prevTotal) / prevTotal) * 100;
         buffer.writeln(
-            '- Perubahan dari bulan lalu: ${change.toStringAsFixed(0)}%');
+          '- Perubahan dari bulan lalu: ${change.toStringAsFixed(0)}%',
+        );
       }
     }
     return buffer.toString();

@@ -1,78 +1,79 @@
 # SisaPedia
 
-Aplikasi mobile Flutter untuk pengelolaan sampah sirkular — lomba DSDC Undip.
+Flutter mobile app for an auditable waste pickup lifecycle in Semarang. Android is the competition target; iOS remains supported by the shared Flutter codebase.
 
-**Status saat ini**: Phase 1 — role **Sumber** (warga/pemilah sampah) saja. Role
-Pengolah & DLH-Admin belum dikerjakan.
+## Run the offline competition build
 
-## Fitur
-
-- Login/Register (Firebase Auth)
-- Beranda: Poin Sirkular, Setor Cerdas (voice AI), Setor manual (Organik/Anorganik),
-  Wilayah Pencocokan, redeem poin, artikel, Movement, riwayat setoran
-- **Setor Cerdas**: speech-to-text nyata (`speech_to_text`, locale `id_ID`) +
-  parsing kata kunci Bahasa Indonesia untuk deteksi jenis & berat sampah
-- Peta Pencocokan: peta interaktif OpenStreetMap (`flutter_map`) menampilkan
-  mitra pengolah (Bank Sampah, Maggot BSF, Pengepul, Pengompos)
-- Dashboard: statistik dampak sirkular, grafik tren bulanan, breakdown kategori,
-  dan **Insight AI** yang digenerate lewat Groq API
-- Profil: info akun, poin, halaman statis, logout
-
-## Setup wajib sebelum menjalankan app
-
-Dua hal ini **tidak bisa disiapkan oleh AI**, karena butuh login akun kamu sendiri:
-
-### 1. Firebase
-
-1. Install FlutterFire CLI (sekali saja): `dart pub global activate flutterfire_cli`
-2. Buat project baru di [console.firebase.google.com](https://console.firebase.google.com)
-3. Di folder project ini, jalankan:
-   ```bash
-   flutterfire configure
-   ```
-   Login dengan akun Google kamu, pilih project Firebase yang baru dibuat, pilih
-   platform Android (dan iOS jika perlu). Perintah ini akan **menimpa**
-   `lib/firebase_options.dart` (yang saat ini masih placeholder) dengan config asli.
-4. Di Firebase Console, aktifkan:
-   - **Authentication** → Sign-in method → Email/Password
-   - **Firestore Database** → Create database (mode production atau test, sesuaikan)
-
-### 2. Groq API key (untuk Insight AI "Sari")
-
-1. Buat API key di [console.groq.com](https://console.groq.com)
-2. Copy `.env.example` menjadi `.env`, lalu isi:
-   ```
-   GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
-   ```
-   File `.env` sudah di-gitignore, jadi aman dari commit.
-
-Tanpa Groq key, app tetap jalan normal — kartu "Insight AI Sari" di Dashboard
-akan menampilkan pesan bahwa Groq belum dikonfigurasi.
-
-### 3. Seed data contoh (opsional, biar app tidak kosong)
-
-Tambahkan manual di Firestore Console beberapa dokumen contoh:
-
-- **`partners`**: `{ nama, tipe: "bankSampah"|"maggotBsf"|"pengepul"|"pengompos", lat, lng, kapasitas_tersedia, kapasitas_total, kategori_diterima: [...] }`
-- **`articles`**: `{ title, summary, content, read_time_minutes }`
-- **`movement_events`**: `{ title, organizer, date (timestamp), location }`
-
-## Menjalankan app
+Preview Mode is the default and stores submissions, points, selected role, and reset state on-device. No network, map tiles, SMS, or backend account is required.
 
 ```bash
 flutter pub get
 flutter run
+# Explicit preview APK build (Sari tries OmniRoute, then uses local demo data):
+flutter build apk --release --dart-define=PREVIEW_MODE=true \
+  --dart-define=OMNIROUTE_APP_SECRET=YOUR_APP_SECRET
+# Optional endpoint/model overrides (the defaults are the current ephemeral
+# trycloudflare URL and antigravity/gemini-3.6-flash-high):
+# --dart-define=OMNIROUTE_BASE_URL=https://your-router.example/v1/chat/completions
+# --dart-define=OMNIROUTE_MODEL=your-model
 ```
 
-Pastikan device/emulator Android sudah terhubung (`flutter devices` untuk cek).
+Use **Masuk sebagai Akun Testing**, then the in-app role switcher to demonstrate Sumber, Pengolah, DLH, and Admin. Preview OTP is `246810`. Reset restores deterministic Semarang identities (Bu Siti/Pasar Sampangan, Pak Bambang/Bank Sampahku Berkahmu, DLH, Admin), organic/inorganic submissions, offers, evidence, ledger, redeem, notifications, and audit state. Matching remains available through the wilayah list when maps cannot load.
 
-## Batasan yang disengaja (bukan bug)
+## Supabase normal mode
 
-- Redeem poin ke e-wallet (Dana/OVO) dan voucher **tidak memproses uang nyata** —
-  hanya mencatat permintaan (`points_transactions` dengan status `pending_redeem`)
-  untuk ditindaklanjuti admin secara manual.
-- Setor Cerdas pakai parsing regex/keyword, bukan LLM, supaya tidak butuh koneksi
-  API tiap kali. Kalau parsing perlu ditingkatkan, ganti implementasi
-  `WasteVoiceParser` di `lib/core/services/waste_voice_parser.dart` dengan versi
-  yang memanggil Groq API (interface sudah disiapkan untuk itu).
-- Role Pengolah & DLH-Admin belum diimplementasi — menyusul di sesi berikutnya.
+Credentials are runtime-only dart-defines; never commit them or service-role keys.
+For a preview build, `OMNIROUTE_APP_SECRET` is optional and compile-time only. If it
+is missing, expired, or the endpoint cannot be reached, Sari remains usable via
+the deterministic local fallback. `OMNIROUTE_BASE_URL` and `OMNIROUTE_MODEL`
+override the documented preview defaults. The Gatekeeper request uses the
+`X-App-Secret` header; the trycloudflare URL is ephemeral.
+
+```bash
+flutter run --dart-define=PREVIEW_MODE=false \
+  --dart-define=SUPABASE_URL=https://PROJECT.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=publishable-key
+```
+
+Apply the versioned migrations in order (`202608230001_initial.sql` through `202608230011_batch_d_acceptance.sql`) and `supabase/seed.sql`. Provision DLH/Admin profiles server-side with the service-role bootstrap procedure; public metadata can only create Sumber/Pengolah. A trusted operator runs `select public.provision_privileged_profile('USER_UUID'::uuid, 'admin'::public.app_role, 'Admin Name', 'admin@example.invalid');` from a service-role SQL session (or a `postgres` migration session); the function is not executable by `anon` or `authenticated`. Processor applications require a facility latitude/longitude and evidence object, and operational availability uses narrow RPCs; direct authenticated processor table writes are revoked. Deploy `supabase/functions/sari-proxy` with backend-only `NINJA_API_KEY`, `ROUTER_BASE_URL`, and `ROUTER_MODEL` secrets. Sari responses are schema-validated, require an authenticated Sumber role and a per-user rate limit, and require user confirmation; Preview uses a deterministic local fallback.
+
+The security migrations separate precise locations, protect processor review and role fields, expose only aggregate `dlh_city_metrics`, and install participant-based Storage policies. Use `supabase/storage_policies.sql` only when bootstrapping an older project. Deploy `supabase/functions/retention-cleanup` as a scheduled job with `RETENTION_CRON_SECRET`, then POST its endpoint daily; the database RPC claims a durable deletion outbox item and the Edge Function acknowledges success or leaves failures retryable before relational paths are cleared. DLH requests an explicit completion month (defaulting to the current month). `supabase/tests/rls_assertions.sql` is an executable pgTAP checklist for a disposable local database. `upsert_processor_application` is the only normal-mode processor profile write and phone linking uses Supabase `updateUser` plus `phoneChange` OTP.
+
+Supabase reserves ownership of `storage.objects` for `supabase_storage_admin`. The
+forward migration contains an owner-session ACL block; when a deployment runner
+cannot assume that reserved role, run the equivalent revoke/grant statements in
+an owner session before the RLS checklist (the local CLI database uses this
+reserved-role boundary):
+
+```sql
+revoke truncate, references, trigger on table storage.objects from anon, authenticated;
+revoke all on table storage.objects from anon, authenticated;
+grant select, insert, update, delete on table storage.objects to authenticated;
+```
+
+## Architecture
+
+`lib/data/models` defines the shared transaction/points contracts. `Supabase` repositories use RLS, Realtime streams, and privileged SQL transitions. `core/preview` uses the same repository interfaces backed by `SharedPreferences`, making restart persistence and offline behavior testable. `features/roles` provides role-specific mobile navigation; existing Sumber flows remain reachable through the canonical routes.
+
+The state machine is `submitted → matching → offered → accepted → en_route → weighed → completed`, with audited expiry, rejection, cancellation, and dispute branches. Matching weights and point rate are stored/versioned in the database. Precise source location is not exposed until offer acceptance.
+
+The mobile bundle includes the OFL-licensed Red Hat Display and Red Hat Text
+variable fonts in `assets/fonts/`, so the competition APK does not fetch fonts
+at runtime.
+
+Pengolah can create and submit article/event drafts; Admin moderation changes
+their status to approved or rejected with an audited reason. Sari extraction is
+editable and hands off category, subtype, and weight into the location-complete
+manual submission form; pickup window and precise location remain explicit user
+confirmation steps.
+
+## Verification
+
+```bash
+dart format lib test
+flutter analyze
+flutter test
+flutter build apk --release --dart-define=PREVIEW_MODE=true
+```
+
+Android release builds require JDK 17 and the Android SDK. Release signing never falls back to the debug key: create ignored `android/key.properties` (storeFile, storePassword, keyAlias, keyPassword) or set `ANDROID_KEYSTORE_FILE`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD` before `flutter build apk --release`. Run `flutter doctor --verbose` to confirm the selected JDK before building. If Supabase CLI is unavailable, validate SQL using PostgreSQL CI; never point tests at production. `.env.example` contains placeholders only.

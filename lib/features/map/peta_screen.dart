@@ -145,17 +145,24 @@ class _PetaScreenState extends ConsumerState<PetaScreen> {
                                 decoration: BoxDecoration(
                                   color: _colorFor(partner.tipe),
                                   shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       blurRadius: 4,
                                     ),
                                   ],
                                 ),
-                                child: Icon(_iconFor(partner.tipe),
-                                    color: Colors.white, size: 20),
+                                child: Icon(
+                                  _iconFor(partner.tipe),
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ),
@@ -166,8 +173,10 @@ class _PetaScreenState extends ConsumerState<PetaScreen> {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => Center(
-                child: Text('Gagal memuat peta mitra.',
-                    style: AppTextStyles.captionMuted),
+                child: Text(
+                  'Gagal memuat peta mitra.',
+                  style: AppTextStyles.captionMuted,
+                ),
               ),
             ),
           ),

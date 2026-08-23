@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/session/session_mode.dart';
+import '../../core/providers/repository_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/utils/firebase_error_mapper.dart';
+import '../../core/utils/auth_error_mapper.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final ok = await ref.read(authControllerProvider.notifier).signIn(
+    final ok = await ref
+        .read(authControllerProvider.notifier)
+        .signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -44,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _enterAs(SessionMode mode) {
     ref.read(sessionModeProvider.notifier).state = mode;
-    context.go('/beranda');
+    context.go('/role');
   }
 
   @override
@@ -67,13 +70,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Nomor HP atau Email', style: AppTextStyles.bodyBold),
+                      Text('Email', style: AppTextStyles.bodyBold),
+                      Text(
+                        'Nomor HP juga dapat digunakan dengan OTP',
+                        style: AppTextStyles.captionMuted,
+                      ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration:
-                            const InputDecoration(hintText: '08xx-xxxx-xxxx'),
+                        decoration: const InputDecoration(
+                          hintText: '08xx-xxxx-xxxx',
+                        ),
                         validator: (v) => (v == null || !v.contains('@'))
                             ? 'Masukkan email yang valid'
                             : null,
@@ -87,11 +95,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: 'Minimal 6 karakter',
                           suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
                             onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
                           ),
                         ),
                         validator: (v) => (v == null || v.length < 6)
@@ -103,9 +114,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: TextButton(
                           onPressed: () =>
                               ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Segera hadir.')),
-                          ),
+                                const SnackBar(content: Text('Segera hadir.')),
+                              ),
                           child: const Text('Lupa kata sandi?'),
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: _phoneOtp,
+                          icon: const Icon(Icons.sms_outlined, size: 18),
+                          label: const Text('Masuk dengan OTP nomor HP'),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -142,10 +161,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           const Expanded(child: Divider()),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('atau',
-                                style: AppTextStyles.captionMuted),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'atau',
+                              style: AppTextStyles.captionMuted,
+                            ),
                           ),
                           const Expanded(child: Divider()),
                         ],
@@ -155,8 +175,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         height: 48,
                         child: OutlinedButton.icon(
                           onPressed: () => _enterAs(SessionMode.guest),
-                          icon: const Icon(Icons.person_outline_rounded,
-                              size: 18),
+                          icon: const Icon(
+                            Icons.person_outline_rounded,
+                            size: 18,
+                          ),
                           label: const Text('Masuk sebagai Tamu'),
                           style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(
@@ -191,6 +213,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+
+  Future<void> _phoneOtp() async {
+    final phone = TextEditingController();
+    final token = TextEditingController();
+    final submit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('OTP nomor HP'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: phone,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Nomor HP'),
+            ),
+            TextField(
+              controller: token,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Kode OTP (setelah dikirim)',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await ref
+                    .read(authRepositoryProvider)
+                    .sendPhoneOtp(phone.text.trim());
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Kode OTP dikirim.')),
+                  );
+                }
+              } catch (_) {}
+            },
+            child: const Text('Kirim OTP'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Verifikasi'),
+          ),
+        ],
+      ),
+    );
+    if (submit == true && mounted) {
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await ref
+            .read(authRepositoryProvider)
+            .verifyPhoneOtp(phone: phone.text.trim(), token: token.text.trim());
+      } catch (_) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('OTP belum dapat diverifikasi.')),
+        );
+      }
+    }
+    phone.dispose();
+    token.dispose();
+  }
 }
 
 class _Header extends StatelessWidget {
@@ -219,7 +304,9 @@ class _Header extends StatelessWidget {
                   width: 220,
                   height: 150,
                   decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle),
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
             ),
@@ -232,11 +319,17 @@ class _Header extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.eco_rounded,
-                      color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.eco_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                Text('SisaPedia', style: AppTextStyles.brand.copyWith(fontSize: 22)),
+                Text(
+                  'SisaPedia',
+                  style: AppTextStyles.brand.copyWith(fontSize: 22),
+                ),
               ],
             ),
           ],

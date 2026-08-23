@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class UserModel {
   final String uid;
   final String name;
@@ -7,6 +5,7 @@ class UserModel {
   final int poinSirkular;
   final String levelTitle;
   final DateTime? createdAt;
+  final String primaryRole;
 
   const UserModel({
     required this.uid,
@@ -15,6 +14,7 @@ class UserModel {
     this.poinSirkular = 0,
     this.levelTitle = 'Pejuang Kota Sirkular',
     this.createdAt,
+    this.primaryRole = 'sumber',
   });
 
   factory UserModel.fromMap(String uid, Map<String, dynamic> map) {
@@ -24,7 +24,8 @@ class UserModel {
       email: map['email'] as String? ?? '',
       poinSirkular: (map['poin_sirkular'] as num?)?.toInt() ?? 0,
       levelTitle: map['level_title'] as String? ?? 'Pejuang Kota Sirkular',
-      createdAt: (map['created_at'] as Timestamp?)?.toDate(),
+      createdAt: _userDate(map['created_at']),
+      primaryRole: map['primary_role'] as String? ?? 'sumber',
     );
   }
 
@@ -34,13 +35,17 @@ class UserModel {
       'email': email,
       'poin_sirkular': poinSirkular,
       'level_title': levelTitle,
-      'created_at': createdAt != null
-          ? Timestamp.fromDate(createdAt!)
-          : FieldValue.serverTimestamp(),
+      'created_at': createdAt?.toUtc().toIso8601String(),
+      'primary_role': primaryRole,
     };
   }
 
-  UserModel copyWith({String? name, int? poinSirkular, String? levelTitle}) {
+  UserModel copyWith({
+    String? name,
+    int? poinSirkular,
+    String? levelTitle,
+    String? primaryRole,
+  }) {
     return UserModel(
       uid: uid,
       name: name ?? this.name,
@@ -48,6 +53,13 @@ class UserModel {
       poinSirkular: poinSirkular ?? this.poinSirkular,
       levelTitle: levelTitle ?? this.levelTitle,
       createdAt: createdAt,
+      primaryRole: primaryRole ?? this.primaryRole,
     );
   }
 }
+
+DateTime? _userDate(dynamic value) => value is DateTime
+    ? value
+    : value is String
+    ? DateTime.tryParse(value)
+    : null;

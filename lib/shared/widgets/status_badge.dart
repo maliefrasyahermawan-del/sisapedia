@@ -15,6 +15,8 @@ class StatusBadge extends StatelessWidget {
         return AppColors.warning;
       case SubmissionStatus.rejected:
         return AppColors.error;
+      default:
+        return AppColors.warning;
     }
   }
 

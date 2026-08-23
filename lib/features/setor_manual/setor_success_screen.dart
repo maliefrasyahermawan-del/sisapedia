@@ -23,12 +23,13 @@ class SetorSuccessScreen extends ConsumerWidget {
     final name = profile?.name.isNotEmpty == true ? profile!.name : 'Sobat';
     final level = LevelProgress.fromPoin(profile?.poinSirkular ?? 0);
     final estimasi = _estimatedPoin(submission.beratKg);
-    final beratLabel =
-        NumberFormat.decimalPattern('id_ID').format(submission.beratKg);
+    final beratLabel = NumberFormat.decimalPattern(
+      'id_ID',
+    ).format(submission.beratKg);
 
     final description = submission.partnerName != null
         ? '${submission.subtipe} $beratLabel kg berhasil dicatat. '
-            '${submission.partnerName} bakal jemput sebentar lagi.'
+              '${submission.partnerName} bakal jemput sebentar lagi.'
         : '${submission.subtipe} $beratLabel kg berhasil dicatat dan diajukan untuk diverifikasi.';
 
     return Scaffold(
@@ -44,16 +45,8 @@ class SetorSuccessScreen extends ConsumerWidget {
         ),
         child: Stack(
           children: [
-            Positioned(
-              top: -30,
-              right: -50,
-              child: _blob(140, 0.14),
-            ),
-            Positioned(
-              bottom: 40,
-              left: -40,
-              child: _blob(110, 0.12),
-            ),
+            Positioned(top: -30, right: -50, child: _blob(140, 0.14)),
+            Positioned(bottom: 40, left: -40, child: _blob(110, 0.12)),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 36, 24, 24),
@@ -73,8 +66,11 @@ class SetorSuccessScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.check_rounded,
-                          color: AppColors.accent700, size: 38),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: AppColors.accent700,
+                        size: 38,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Text(
@@ -119,8 +115,11 @@ class SetorSuccessScreen extends ConsumerWidget {
                               color: AppColors.accent700,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.hourglass_top_rounded,
-                                color: Colors.white, size: 22),
+                            child: const Icon(
+                              Icons.hourglass_top_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -183,7 +182,8 @@ class SetorSuccessScreen extends ConsumerWidget {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.5)),
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
                           ),
@@ -207,7 +207,10 @@ class SetorSuccessScreen extends ConsumerWidget {
       child: Container(
         width: size,
         height: size,
-        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }
