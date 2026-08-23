@@ -257,49 +257,61 @@ class _Pickup extends StatelessWidget {
       if (!context.mounted) return;
       final ok = await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Bukti timbang wajib'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: weight,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Berat aktual (kg)',
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            title: const Text('Bukti timbang wajib'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: weight,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Berat aktual (kg)',
+                  ),
                 ),
-              ),
-              if (ref.read(sessionModeProvider) == SessionMode.demo)
-                FilledButton.tonalIcon(
-                  onPressed: () =>
-                      evidencePath = 'assets/preview/scale-evidence.png',
-                  icon: const Icon(Icons.science_outlined),
-                  label: const Text('Simulasikan bukti timbang'),
-                )
-              else
+                const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () async {
                     final photo = await ImagePicker().pickImage(
                       source: ImageSource.gallery,
                       imageQuality: 85,
                     );
-                    if (photo != null) evidencePath = photo.path;
+                    if (photo != null) {
+                      setDialogState(() => evidencePath = photo.path);
+                    }
                   },
                   icon: const Icon(Icons.photo_camera_outlined),
                   label: const Text('Pilih foto timbangan (wajib)'),
                 ),
+                if (ref.read(sessionModeProvider) == SessionMode.demo)
+                  FilledButton.tonalIcon(
+                    onPressed: () => setDialogState(
+                      () => evidencePath = 'assets/preview/scale-evidence.png',
+                    ),
+                    icon: const Icon(Icons.science_outlined),
+                    label: const Text('Gunakan contoh bukti timbang'),
+                  ),
+                if (evidencePath != null && evidencePath!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bukti dipilih: ${_evidenceFileName(evidencePath!)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Simpan'),
+              ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Simpan'),
-            ),
-          ],
         ),
       );
       if (ok == true) {
@@ -352,6 +364,8 @@ class _Capacity extends StatelessWidget {
     );
   }
 }
+
+String _evidenceFileName(String path) => path.split(RegExp(r'[/\\]')).last;
 
 class _Profile extends ConsumerStatefulWidget {
   const _Profile();
