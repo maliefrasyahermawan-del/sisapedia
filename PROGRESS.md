@@ -2,7 +2,7 @@
 
 > Dokumen ini dibaca dulu di sesi baru sebelum menyentuh kode. Isinya: cara
 > build/extract APK, peta file penting, keputusan desain sesi ini, dan config
-> yang perlu disiapkan manual. Update terakhir: **22 Agustus 2026**.
+> yang perlu disiapkan manual. Update terakhir: **23 Agustus 2026**.
 
 ## 1. Status singkat
 
@@ -12,12 +12,13 @@ role ("Saya Sumber" / "Saya Pengolah") tapi "Saya Pengolah" sengaja
 non-fungsional ("Segera hadir") — semua akun baru tetap terdaftar sebagai
 Sumber.
 
-Checkpoint git: lihat `git log --oneline -3`. Dua commit terakhir sama-sama
-dari sesi **22 Agustus 2026**: (1) redesign Beranda header/kartu poin +
-layar sukses setor + Login/Daftar sesuai referensi desain + login
-"Tamu"/"Akun Testing" baru, lalu (2) patch susulan — fix bug kartu poin
-ketutup header, warna box kategori setor, ganti ikon app + nama app jadi
-"SisaPedia" (lihat Bagian 4 & 4b).
+Checkpoint git: lihat `git log --oneline -4`. Rangkaian commit dari sesi
+**22–23 Agustus 2026**: (1) redesign Beranda header/kartu poin + layar
+sukses setor + Login/Daftar sesuai referensi desain + login "Tamu"/"Akun
+Testing" baru, (2) patch susulan — fix bug kartu poin ketutup header, warna
+box kategori setor, ganti ikon app + nama app jadi "SisaPedia", (3) fix logo
+splash/login yang belum sinkron dengan ikon app asli + redesign daftar
+"Jenis Sampah" di Setor Manual jadi list rapi (lihat Bagian 4, 4b, 4d).
 
 ## 2. Cara build & extract APK
 
@@ -43,9 +44,9 @@ Hasil APK selalu di path yang sama (build ulang menimpa file lama):
 build\app\outputs\flutter-apk\app-release.apk
 ```
 
-Build terakhir (22 Agustus 2026, mode normal/non-preview, setelah patch
-susulan ikon+warna+bugfix): **56.1MB**, berhasil, `flutter analyze` bersih
-(0 issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin
+Build terakhir (23 Agustus 2026, mode normal/non-preview, setelah patch
+logo asli + redesign Jenis Sampah): **56.2MB**, berhasil, `flutter analyze`
+bersih (0 issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin
 (`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan untuk
 saat ini.
 
@@ -112,7 +113,9 @@ lib/
     setor_manual/
       setor_form_screen.dart        — submit sekarang: (1) blokir tamu → `showGuestRegisterGate()`
                                        lalu redirect /register, (2) sukses → push `/setor/sukses`
-                                       (dulu cuma snackbar+pop)
+                                       (dulu cuma snackbar+pop). Pemilihan "Jenis Sampah" (23 Agt)
+                                       diganti dari Wrap+ChoiceChip jadi list card (`_JenisSampahTile`
+                                       + `const _subtipeIcons`)
       setor_success_screen.dart     — BARU (22 Agt): layar sukses full-screen, estimasi poin +
                                        status "menunggu verifikasi" (BUKAN angka final, karena poin
                                        asli baru masuk setelah admin verifikasi submission)
@@ -239,6 +242,30 @@ Tiga hal yang direvisi user setelah lihat hasil patch 4b:
   `android/app/src/main/AndroidManifest.xml` (`android:label`) dan
   `ios/Runner/Info.plist` (`CFBundleDisplayName`/`CFBundleName`).
 
+## 4d. Patch sesi 23 Agustus 2026
+
+Dua hal dari feedback user setelah lihat APK patch 4c:
+
+- **Logo splash & login belum sinkron dengan ikon app** — sebelumnya
+  `splash_screen.dart`, header `login_screen.dart`, dan brand mark kecil di
+  `beranda_header.dart` masih pakai glyph `Icons.eco_rounded` (daun bawaan
+  Material), padahal ikon launcher app sendiri sudah diganti jadi logo
+  bowtie hijau-biru sejak patch 4c. Sekarang ketiganya pakai
+  `Image.asset('assets/icon/app_icon.png')` — file PNG yang sama persis
+  dipakai `flutter_launcher_icons` buat generate ikon launcher — supaya
+  logo yang tampil di dalam app konsisten dengan ikon aplikasi di
+  homescreen HP. File ini didaftarkan sebagai asset Flutter biasa di
+  `pubspec.yaml` (`flutter: assets:`), bukan cuma dipakai launcher icon.
+- **Redesign pemilihan "Jenis Sampah"** di `setor_form_screen.dart` — dulu
+  `Wrap` isi `ChoiceChip` polos, sekarang jadi list vertikal rapi di dalam
+  satu card (ikon lingkaran per jenis sampah + nama + tombol pill
+  "Pilih"/"Dipilih", dipisah `Divider` antar baris), niru gaya referensi
+  user (bukan fitur kamera "tambah sendiri"-nya, cuma cara list +
+  tombolnya). Widget barunya `_JenisSampahTile` (private, di file yang
+  sama), dan mapping ikon per subtipe ada di `const _subtipeIcons` (masih
+  di file yang sama) — kalau nanti nambah subtipe baru, jangan lupa
+  tambahin entry ikonnya juga di situ.
+
 ## 5. Yang BELUM dikerjakan / diketahui terbatas
 
 - Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
@@ -268,8 +295,13 @@ Tiga hal yang direvisi user setelah lihat hasil patch 4b:
   app di-restart — belum ada persist ke local storage.
 - Ikon app (`assets/icon/app_icon*.png`) hasil recreate manual
   (`scripts/gen_icon.py`), BUKAN file asli dari user (belum pernah di-share
-  sebagai file, cuma gambar di chat) — lihat Bagian 4c kalau mau ganti pakai
-  file PNG asli.
+  sebagai file, cuma gambar di chat) — dipakai baik untuk ikon launcher
+  maupun logo di dalam app (splash/login/Beranda, lihat Bagian 4d). Kalau
+  user kirim file PNG logo aslinya nanti, timpa
+  `assets/icon/app_icon.png` + `app_icon_foreground.png`, jalankan ulang
+  `dart run flutter_launcher_icons`, lalu `flutter build apk --release` —
+  otomatis ke-apply ke semua tempat karena satu file yang sama dipakai di
+  mana-mana (lihat Bagian 4c & 4d).
 
 ## 6. Config yang HARUS disiapkan manual (tidak bisa dikerjakan AI)
 

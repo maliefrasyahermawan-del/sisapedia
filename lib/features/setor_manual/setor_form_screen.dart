@@ -26,6 +26,18 @@ const _anorganikSubtipe = [
   'Plastik Lainnya',
 ];
 
+const _subtipeIcons = {
+  'Sisa Sayur & Buah': Icons.eco_rounded,
+  'Sisa Makanan': Icons.restaurant_rounded,
+  'Ampas Kopi': Icons.coffee_rounded,
+  'Sampah Organik Dapur': Icons.kitchen_rounded,
+  'Botol Plastik PET': Icons.local_drink_rounded,
+  'Kardus & Kertas': Icons.inventory_2_rounded,
+  'Logam & Kaleng': Icons.hardware_rounded,
+  'Kaca': Icons.wine_bar_rounded,
+  'Plastik Lainnya': Icons.shopping_bag_rounded,
+};
+
 class SetorFormScreen extends ConsumerStatefulWidget {
   const SetorFormScreen({super.key, required this.kategori});
 
@@ -107,28 +119,30 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
             children: [
               Text('Jenis Sampah', style: AppTextStyles.bodyBold),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final option in subtipeOptions)
-                    ChoiceChip(
-                      label: Text(option),
-                      selected: _subtipe == option,
-                      selectedColor: accentColor.withValues(alpha: 0.15),
-                      labelStyle: AppTextStyles.bodySmall.copyWith(
-                        color: _subtipe == option
-                            ? accentColor
-                            : AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      side: BorderSide(
-                        color:
-                            _subtipe == option ? accentColor : AppColors.border,
-                      ),
-                      onSelected: (_) => setState(() => _subtipe = option),
-                    ),
-                ],
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      for (final option in subtipeOptions) ...[
+                        _JenisSampahTile(
+                          icon: _subtipeIcons[option] ??
+                              Icons.delete_outline_rounded,
+                          label: option,
+                          accentColor: accentColor,
+                          selected: _subtipe == option,
+                          onTap: () => setState(() => _subtipe = option),
+                        ),
+                        if (option != subtipeOptions.last)
+                          const Divider(height: 1, indent: 14, endIndent: 14),
+                      ],
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               Text('Berat (kg)', style: AppTextStyles.bodyBold),
@@ -190,6 +204,90 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _JenisSampahTile extends StatelessWidget {
+  const _JenisSampahTile({
+    required this.icon,
+    required this.label,
+    required this.accentColor,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color accentColor;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        color: selected
+            ? accentColor.withValues(alpha: 0.08)
+            : Colors.transparent,
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: selected
+                    ? accentColor.withValues(alpha: 0.15)
+                    : AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: selected ? accentColor : AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Text(label, style: AppTextStyles.bodyBold)),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 34,
+              child: selected
+                  ? ElevatedButton.icon(
+                      onPressed: onTap,
+                      icon: const Icon(Icons.check_rounded, size: 15),
+                      label: const Text('Dipilih'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        textStyle: AppTextStyles.bodySmall
+                            .copyWith(fontWeight: FontWeight.w700),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    )
+                  : OutlinedButton(
+                      onPressed: onTap,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: accentColor,
+                        side: BorderSide(color: accentColor),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        textStyle: AppTextStyles.bodySmall
+                            .copyWith(fontWeight: FontWeight.w700),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      child: const Text('Pilih'),
+                    ),
+            ),
+          ],
         ),
       ),
     );

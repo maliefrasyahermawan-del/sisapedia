@@ -65,8 +65,16 @@ class BerandaHeader extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.eco_rounded,
-                            color: Colors.white, size: 22),
+                        Container(
+                          width: 22,
+                          height: 22,
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Image.asset('assets/icon/app_icon.png'),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text('SisaPedia', style: AppTextStyles.brand),

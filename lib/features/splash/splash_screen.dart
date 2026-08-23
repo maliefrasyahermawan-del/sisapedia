@@ -33,12 +33,12 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               width: 84,
               height: 84,
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: const Icon(Icons.eco_rounded,
-                  color: AppColors.primary, size: 44),
+              child: Image.asset('assets/icon/app_icon.png'),
             ),
             const SizedBox(height: 20),
             Text('SisaPedia',

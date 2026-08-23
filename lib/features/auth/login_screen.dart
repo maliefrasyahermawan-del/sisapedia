@@ -228,12 +228,12 @@ class _Header extends StatelessWidget {
                 Container(
                   width: 56,
                   height: 56,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.eco_rounded,
-                      color: Colors.white, size: 28),
+                  child: Image.asset('assets/icon/app_icon.png'),
                 ),
                 const SizedBox(height: 10),
                 Text('SisaPedia', style: AppTextStyles.brand.copyWith(fontSize: 22)),
