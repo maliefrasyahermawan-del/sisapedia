@@ -212,66 +212,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _phoneOtp() async {
-    final phone = TextEditingController();
-    final token = TextEditingController();
-    final submit = await showDialog<bool>(
+    await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('OTP nomor HP'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Nomor HP'),
-            ),
-            TextField(
-              controller: token,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Kode OTP (setelah dikirim)',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await ref
-                    .read(authRepositoryProvider)
-                    .sendPhoneOtp(phone.text.trim());
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(content: Text('Kode OTP dikirim.')),
-                  );
-                }
-              } catch (_) {}
-            },
-            child: const Text('Kirim OTP'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Verifikasi'),
-          ),
-        ],
-      ),
+      builder: (_) => const _PhoneOtpDialog(),
     );
-    if (submit == true && mounted) {
-      final messenger = ScaffoldMessenger.of(context);
-      try {
-        await ref
-            .read(authRepositoryProvider)
-            .verifyPhoneOtp(phone: phone.text.trim(), token: token.text.trim());
-      } catch (_) {
-        messenger.showSnackBar(
-          const SnackBar(content: Text('OTP belum dapat diverifikasi.')),
-        );
-      }
-    }
-    phone.dispose();
-    token.dispose();
   }
 
   Future<void> _forgotPassword() async {
@@ -289,6 +233,197 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       );
     }
+  }
+}
+
+String? _normalizeIndonesianPhone(String raw) {
+  final compact = raw.replaceAll(RegExp(r'[\s().-]'), '');
+  String normalized;
+  if (compact.startsWith('+62')) {
+    normalized = compact;
+  } else if (compact.startsWith('62')) {
+    normalized = '+$compact';
+  } else if (compact.startsWith('08')) {
+    normalized = '+62${compact.substring(1)}';
+  } else {
+    return null;
+  }
+  return RegExp(r'^\+628\d{8,11}$').hasMatch(normalized) ? normalized : null;
+}
+
+class _PhoneOtpDialog extends ConsumerStatefulWidget {
+  const _PhoneOtpDialog();
+
+  @override
+  ConsumerState<_PhoneOtpDialog> createState() => _PhoneOtpDialogState();
+}
+
+class _PhoneOtpDialogState extends ConsumerState<_PhoneOtpDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _phoneController = TextEditingController();
+  final _tokenController = TextEditingController();
+  String? _normalizedPhone;
+  String? _error;
+  bool _sent = false;
+  bool _sending = false;
+  bool _verifying = false;
+
+  bool get _showPreviewCode =>
+      ref.read(sessionModeProvider) == SessionMode.demo;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _tokenController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final normalized = _normalizeIndonesianPhone(_phoneController.text);
+    if (normalized == null) {
+      setState(
+        () => _error =
+            'Masukkan nomor HP Indonesia yang valid, misalnya 081234567890.',
+      );
+      return;
+    }
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).sendPhoneOtp(normalized);
+      if (!mounted) return;
+      setState(() {
+        _normalizedPhone = normalized;
+        _sent = true;
+        _sending = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _sending = false;
+        _error = 'OTP belum dapat dikirim. Periksa koneksi lalu coba lagi.';
+      });
+    }
+  }
+
+  Future<void> _verify() async {
+    if (!_sent || _normalizedPhone == null || _verifying) return;
+    final token = _tokenController.text.trim();
+    if (!RegExp(r'^\d{6}$').hasMatch(token)) {
+      setState(() => _error = 'Kode OTP harus terdiri dari 6 digit.');
+      return;
+    }
+    setState(() {
+      _verifying = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .verifyPhoneOtp(phone: _normalizedPhone!, token: token);
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _verifying = false;
+        _error = 'Kode OTP belum benar atau sudah kedaluwarsa.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('OTP nomor HP'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _phoneController,
+                enabled: !_sending && !_verifying,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Nomor HP',
+                  hintText: '081234567890',
+                ),
+                validator: (value) =>
+                    _normalizeIndonesianPhone(value ?? '') == null
+                    ? 'Masukkan nomor HP Indonesia yang valid'
+                    : null,
+              ),
+              const SizedBox(height: 8),
+              if (_sent) ...[
+                Text(
+                  'Kode OTP dikirim ke nomor yang berakhiran ${_normalizedPhone!.substring(_normalizedPhone!.length - 4)}.',
+                  style: AppTextStyles.captionMuted,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _tokenController,
+                  enabled: !_verifying,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  decoration: const InputDecoration(
+                    labelText: 'Kode OTP',
+                    counterText: '',
+                  ),
+                ),
+                if (_showPreviewCode)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('Preview: gunakan kode 246810.'),
+                  ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: const TextStyle(color: AppColors.error)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sending || _verifying
+              ? null
+              : () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        if (!_sent)
+          FilledButton(
+            onPressed: _sending ? null : _send,
+            child: _sending
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Kirim OTP'),
+          )
+        else ...[
+          TextButton(
+            onPressed: _sending || _verifying ? null : _send,
+            child: const Text('Kirim ulang'),
+          ),
+          FilledButton(
+            onPressed: _verifying ? null : _verify,
+            child: _verifying
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Verifikasi'),
+          ),
+        ],
+      ],
+    );
   }
 }
 
