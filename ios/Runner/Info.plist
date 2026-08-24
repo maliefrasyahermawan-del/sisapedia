@@ -28,6 +28,10 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>SisaPedia butuh akses mikrofon untuk fitur Setor Cerdas (catat setoran sampah lewat suara).</string>
+	<key>NSCameraUsageDescription</key>
+	<string>SisaPedia butuh akses kamera untuk fitur Setor Cerdas Mode Foto (foto sampah untuk dideteksi otomatis).</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SisaPedia butuh akses galeri untuk memilih foto sampah di fitur Setor Cerdas Mode Foto.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>SisaPedia menggunakan pengenalan suara untuk mengubah ucapanmu menjadi catatan setoran sampah.</string>
 	<key>UIApplicationSceneManifest</key>

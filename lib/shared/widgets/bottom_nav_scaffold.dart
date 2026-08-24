@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/repository_providers.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../features/setor_cerdas/voice_modal.dart';
+import '../../features/setor_cerdas/setor_cerdas_mode_sheet.dart';
 
 class BottomNavScaffold extends ConsumerWidget {
   const BottomNavScaffold({super.key, required this.shell});
@@ -92,7 +92,7 @@ class BottomNavScaffold extends ConsumerWidget {
                     child: _SetorCerdasButton(
                       onTap: uid == null
                           ? null
-                          : () => showVoiceModal(context, ref, uid),
+                          : () => showSetorCerdasModeSheet(context, ref, uid),
                     ),
                   ),
                 ),
@@ -163,7 +163,8 @@ class _SetorCerdasButton extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.mic_rounded, color: Colors.white, size: 22),
+            child:
+                const Icon(Icons.psychology_rounded, color: Colors.white, size: 24),
           ),
           const SizedBox(height: 4),
           Text(

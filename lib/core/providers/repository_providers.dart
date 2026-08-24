@@ -7,6 +7,7 @@ import '../../data/repositories/partner_repository.dart';
 import '../../data/repositories/points_repository.dart';
 import '../../data/repositories/submission_repository.dart';
 import '../preview/fake_repositories.dart';
+import '../services/gemini_vision_service.dart';
 import '../services/groq_service.dart';
 import '../services/speech_service.dart';
 import '../services/waste_voice_parser.dart';
@@ -27,6 +28,8 @@ final contentRepositoryProvider = Provider<ContentRepositoryBase>(
 
 final groqServiceProvider = Provider<GroqService>(
     (ref) => _isDemo(ref) ? FakeGroqService() : GroqService());
+final geminiVisionServiceProvider = Provider<GeminiVisionService>(
+    (ref) => _isDemo(ref) ? FakeGeminiVisionService() : GeminiVisionService());
 final speechServiceProvider = Provider<SpeechService>((ref) => SpeechService());
 final wasteVoiceParserProvider =
     Provider<WasteVoiceParser>((ref) => RegexWasteVoiceParser());

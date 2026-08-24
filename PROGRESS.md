@@ -2,8 +2,8 @@
 
 > Dokumen ini dibaca dulu di sesi baru sebelum menyentuh kode. Isinya: cara
 > build/extract APK, peta file penting, keputusan desain sesi ini, dan config
-> yang perlu disiapkan manual. Update terakhir: **23 Agustus 2026** (sore,
-> setelah cherry-pick dari branch `dev` — lihat Bagian 4e).
+> yang perlu disiapkan manual. Update terakhir: **24 Agustus 2026** (fitur
+> "Setor Cerdas Mode Foto" pakai Gemini Vision — lihat Bagian 4f).
 
 ## 1. Status singkat
 
@@ -13,13 +13,17 @@ role ("Saya Sumber" / "Saya Pengolah") tapi "Saya Pengolah" sengaja
 non-fungsional ("Segera hadir") — semua akun baru tetap terdaftar sebagai
 Sumber.
 
-Checkpoint git: lihat `git log --oneline -4`. Rangkaian commit dari sesi
-**22–23 Agustus 2026**: (1) redesign Beranda header/kartu poin + layar
+Checkpoint git: lihat `git log --oneline -6`. Rangkaian commit dari sesi
+**22–24 Agustus 2026**: (1) redesign Beranda header/kartu poin + layar
 sukses setor + Login/Daftar sesuai referensi desain + login "Tamu"/"Akun
 Testing" baru, (2) patch susulan — fix bug kartu poin ketutup header, warna
 box kategori setor, ganti ikon app + nama app jadi "SisaPedia", (3) fix logo
 splash/login yang belum sinkron dengan ikon app asli + redesign daftar
-"Jenis Sampah" di Setor Manual jadi list rapi (lihat Bagian 4, 4b, 4d).
+"Jenis Sampah" di Setor Manual jadi list rapi, (4) cherry-pick font Red Hat
++ layar Semua Artikel dari branch `dev`, (5) **fitur baru "Setor Cerdas
+Mode Foto"** (Gemini Vision) + upgrade besar-besaran Setor Manual (foto
+bukti, mode pengiriman, drill-down jenis sampah, info pengantaran) — lihat
+Bagian 4, 4b, 4d, 4e, 4f.
 
 ## 2. Cara build & extract APK
 
@@ -45,11 +49,10 @@ Hasil APK selalu di path yang sama (build ulang menimpa file lama):
 build\app\outputs\flutter-apk\app-release.apk
 ```
 
-Build terakhir (23 Agustus 2026 sore, setelah cherry-pick font Red Hat +
-layar Semua Artikel dari `dev`): **56.1MB**, berhasil, `flutter analyze`
-bersih (0 issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin
-(`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan untuk
-saat ini.
+Build terakhir (24 Agustus 2026, setelah fitur Setor Cerdas Mode Foto +
+upgrade Setor Manual): **57.2MB**, berhasil, `flutter analyze` bersih (0
+issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin (`firebase_storage`,
+`speech_to_text`) — tidak fatal, aman diabaikan untuk saat ini.
 
 > Catatan: login "Masuk sebagai Akun Testing" (Bagian 4) sekarang jadi cara
 > paling gampang untuk lihat app terisi data mock **tanpa** perlu build
@@ -91,15 +94,39 @@ lib/
                                        `userProfileProvider` balik `guestUserModel` langsung, normal
                                        → repository Firestore asli
     router/app_router.dart          — redirect guard sekarang juga cek sessionMode (tamu/demo lolos
-                                       tanpa uid Firebase asli); route BARU: /setor/sukses
-    services/groq_service.dart      — GroqService.chat() (chat Sari penuh, terpisah dari
+                                       tanpa uid Firebase asli); route BARU: /setor/sukses,
+                                       /setor/foto-konfirmasi. **PENTING (bug fix 24 Agt)**: route
+                                       literal (/setor/sukses, /setor/foto-konfirmasi) HARUS
+                                       dideklarasikan SEBELUM /setor/:kategori — go_router cocokin
+                                       sibling routes berurutan sesuai deklarasi, dan `:kategori`
+                                       match string APAPUN termasuk "sukses"/"foto-konfirmasi",
+                                       jadi kalau kebalik, route literal itu nggak akan pernah
+                                       ke-reach (fallback diam-diam ke SetorFormScreen kategori
+                                       organik) — ini yang sempat bikin alur Foto Cerdas nyasar ke
+                                       form manual, lihat Bagian 4f
+    services/
+      groq_service.dart             — GroqService.chat() (chat Sari penuh, terpisah dari
                                        generateInsight() untuk Insight AI Dashboard)
+      gemini_vision_service.dart    — BARU (24 Agt): GeminiVisionService.analyze(), rotasi
+                                       otomatis sampai 3 API key (GEMINI_API_KEY_1/2/3) kalau
+                                       kena rate limit (HTTP 429), parse JSON hasil deteksi
+                                       (strip code-fence markdown dulu kalau ada)
+      photo_upload_service.dart     — BARU (24 Agt): uploadSubmissionPhoto(), upload ke
+                                       Firebase Storage ATAU placeholder fake kalau
+                                       kPreviewMode/demo (lihat Bagian 4f)
     theme/                          — app_colors.dart (+ accent700/800/900, levelBadge BARU),
-                                       app_text_styles.dart, app_theme.dart
+                                       app_text_styles.dart, app_theme.dart (font Red Hat, lihat
+                                       Bagian 4e)
   data/
     geo/semarang_boundary.dart      — 194 titik lat/lng batas administratif Kota Semarang
                                        (dari OSM/Nominatim, disederhanakan RDP eps=0.0012)
-    models/                         — semua model data (ArticleModel.content sudah diisi mock)
+    models/                         — semua model data (ArticleModel.content sudah diisi mock).
+                                       submission_model.dart (24 Agt) nambah: fotoUrl, alamat,
+                                       tanggalPengantaran, waktuPengantaran, catatan,
+                                       DeliveryMode enum (cod/antarLangsung/requestPengolah) —
+                                       semua nullable/additive, nggak ganggu kode lama.
+                                       waste_detection_result.dart BARU: WasteDetectionResult +
+                                       WasteConfidence enum, dipakai GeminiVisionService
     repositories/                   — implementasi asli (Firestore), dipakai kalau sessionMode normal
   features/
     home/
@@ -114,12 +141,40 @@ lib/
     setor_manual/
       setor_form_screen.dart        — submit sekarang: (1) blokir tamu → `showGuestRegisterGate()`
                                        lalu redirect /register, (2) sukses → push `/setor/sukses`
-                                       (dulu cuma snackbar+pop). Pemilihan "Jenis Sampah" (23 Agt)
-                                       diganti dari Wrap+ChoiceChip jadi list card (`_JenisSampahTile`
-                                       + `const _subtipeIcons`)
-      setor_success_screen.dart     — BARU (22 Agt): layar sukses full-screen, estimasi poin +
-                                       status "menunggu verifikasi" (BUKAN angka final, karena poin
-                                       asli baru masuk setelah admin verifikasi submission)
+                                       (dulu cuma snackbar+pop). Jenis Sampah sekarang drill-down
+                                       2 level (BARU 24 Agt, lihat Bagian 4f) — tap kategori utama
+                                       (mis. "Kaca") buka bottom sheet berisi ≥5 sub-jenis spesifik
+                                       (`_pickJenis()`, data di `const _organikJenis`/`_anorganikJenis`).
+                                       Foto bukti wajib (`FotoBuktiField`) + `PengantaranSection`
+                                       (mode pengiriman/alamat/jadwal/catatan) ditambahkan di sini
+      setor_success_screen.dart     — layar sukses full-screen, estimasi poin (`estimatedPoinFromKg()`
+                                       di `level_utils.dart`, BUKAN lagi private di file ini) +
+                                       status "menunggu verifikasi"
+      widgets/                      — BARU (24 Agt): dipakai bareng Setor Manual & Setor Cerdas Foto
+        pengantaran_section.dart    — `PengantaranSection`: pilihan Mode Pengiriman (COD/Antar
+                                       Langsung/Request Pengolah Datang, `DeliveryMode` enum di
+                                       submission_model.dart) + field alamat yang label/hint-nya
+                                       otomatis berubah sesuai mode + tanggal/waktu pengantaran +
+                                       catatan opsional
+        foto_bukti_field.dart       — `FotoBuktiField`: kartu upload foto bukti sampah (wajib),
+                                       cuma dipakai Setor Manual (Setor Cerdas Foto reuse foto
+                                       deteksi AI-nya sendiri sebagai bukti, tidak perlu foto kedua)
+    setor_foto/                     — BARU (24 Agt): alur "Mode Foto Cerdas"
+      foto_cerdas_flow.dart         — `startFotoCerdasFlow()` (entry point) dan
+                                       `captureAndAnalyzePhoto()` (dipisah dari navigasi supaya
+                                       "Ambil Ulang Foto" bisa `pushReplacement` tanpa pop/push
+                                       manual yang rawan context-invalid)
+      foto_konfirmasi_screen.dart   — `FotoKonfirmasiScreen`, layar "Validasi Hasil AI": preview
+                                       foto + badge keyakinan AI, kategori/jenis material/sub-jenis
+                                       BISA DIKOREKSI (bukan teks statis), berat WAJIB manual (AI
+                                       tidak pernah diminta nebak kg), + `PengantaranSection` yang
+                                       sama dengan Setor Manual
+    setor_cerdas/
+      voice_modal.dart              — alur suara lama, TIDAK diubah sama sekali
+      setor_cerdas_mode_sheet.dart  — BARU (24 Agt): bottom sheet pilihan "Mode Suara Cerdas" vs
+                                       "Mode Foto Cerdas", jadi entry point baru tombol Setor
+                                       Cerdas di nav bar (ikonnya juga diganti mic → otak
+                                       `Icons.psychology_rounded`, lihat Bagian 4f)
     auth/
       login_screen.dart             — REDESIGN (22 Agt) sesuai referensi HTML + tombol baru "Masuk
                                        sebagai Tamu" dan "Masuk sebagai Akun Testing"
@@ -135,8 +190,13 @@ lib/
       profil_screen.dart            — tombol Keluar sekarang reset sessionMode ke normal juga
                                        (bukan cuma signOut Firebase), supaya tamu/akun testing bisa
                                        "keluar" balik ke Login sungguhan
-    shared/widgets/bottom_nav_scaffold.dart — FAB "Sari" mengambang di semua tab (mic nonaktif
-                                       otomatis untuk tamu, karena uid Firebase asli null)
+    shared/widgets/
+      bottom_nav_scaffold.dart      — FAB "Sari" mengambang di semua tab; tombol Setor Cerdas
+                                       (nonaktif otomatis untuk tamu) sekarang buka
+                                       `showSetorCerdasModeSheet()`, bukan langsung `showVoiceModal()`
+      image_source_sheet.dart       — BARU (24 Agt): `showImageSourceSheet()`, bottom sheet
+                                       Kamera/Galeri yang dipakai bareng Setor Cerdas Foto dan
+                                       foto bukti Setor Manual
 ```
 
 ## 4. Ringkasan patch sesi 19 Agustus 2026 (urut sesuai permintaan)
@@ -305,6 +365,80 @@ disetujui user — kalau diadopsi malah mundur dari desain yang sudah oke),
 dan `releases/apk/*.apk` (APK yang mereka commit langsung ke git, bukan
 gaya project ini).
 
+## 4f. Fitur baru "Setor Cerdas Mode Foto" + upgrade Setor Manual (24 Agustus 2026)
+
+Permintaan asli user: Setor Cerdas yang sekarang cuma mode suara (voice +
+regex) mau ditambah alternatif **mode foto** pakai Gemini Vision — bukan
+gantiin mode suara, dua-duanya hidup berdampingan dan user pilih sendiri
+tiap kali mau setor.
+
+**Alur baru:**
+1. Tap tombol Setor Cerdas di nav bar (ikonnya diganti dari mic jadi otak,
+   `Icons.psychology_rounded`, sesuai permintaan user) → `showSetorCerdasModeSheet()`
+   nampilin 2 pilihan: "Mode Suara Cerdas" (langsung ke `showVoiceModal()`
+   yang lama, **tidak disentuh sama sekali**) dan "Mode Foto Cerdas" (alur baru).
+2. Mode Foto: pilih Kamera/Galeri (`showImageSourceSheet()`) → foto dikirim
+   ke `GeminiVisionService.analyze()` → hasil deteksi (kategori, jenis
+   material, sub-jenis, estimasi jumlah item, confidence tinggi/sedang/rendah)
+   ditampilkan di layar **"Validasi Hasil AI"** (`FotoKonfirmasiScreen`) —
+   semua field BISA DIKOREKSI, berat WAJIB diisi manual (AI dilarang keras
+   nebak kg dari foto, sesuai instruksi user — nggak reliable tanpa objek
+   referensi skala).
+3. Baru setelah user tekan "Konfirmasi & Simpan", data masuk ke
+   `submissionRepositoryProvider.create()` yang sama persis dengan alur
+   Setor Manual.
+
+**`GeminiVisionService`** (`lib/core/services/gemini_vision_service.dart`):
+- Sampai 3 API key (`GEMINI_API_KEY_1/2/3` di `.env`), sequential fallback
+  sederhana kalau kena HTTP 429 (rate limit/quota habis) — bukan
+  round-robin/load-balancing kompleks, sesuai instruksi user.
+- Model: `gemini-2.0-flash`. Prompt eksplisit minta JSON terstruktur +
+  eksplisit MELARANG estimasi berat kg.
+- Parse JSON aman (try-catch + strip code-fence ```` ```json ```` kalau ada).
+- `FakeGeminiVisionService` di `fake_repositories.dart` (data dummy acak
+  dari 3 contoh) buat mode Preview/Akun Testing — provider-nya
+  (`geminiVisionServiceProvider`) ikut pola `_isDemo(ref)` yang sama
+  dengan `groqServiceProvider`.
+
+**Bug kritis yang ketemu & dibenerin** (user laporkan: habis foto+analisis,
+malah nyasar ke layar Setor Organik manual, dan kategori "kelihatan salah"):
+root cause-nya BUKAN Gemini salah tebak — `/setor/:kategori` dideklarasikan
+SEBELUM `/setor/foto-konfirmasi` di `app_router.dart`. go_router cocokin
+sibling routes urut sesuai deklarasi, dan `:kategori` itu wildcard yang
+match string APAPUN (termasuk "foto-konfirmasi"), jadi route itu keburu
+"dimakan" `:kategori` dan fallback diam-diam ke `WasteCategory.organik` —
+user nggak pernah lihat jawaban asli Gemini sama sekali. Fix: pindahin
+semua route literal di bawah `/setor/` (termasuk `/setor/sukses` yang sudah
+lama ada, ternyata kena bug yang sama) ke atas `/setor/:kategori`.
+
+**Upgrade susulan Setor Manual** (setelah user lihat "Validasi Hasil AI"
+jalan, minta fitur logistik yang sebelumnya belum ada, niru referensi app
+lain):
+- **Foto Bukti Sampah** (wajib) — `FotoBuktiField`, upload via
+  `photo_upload_service.dart` ke Firebase Storage (atau placeholder fake
+  kalau `kPreviewMode`/demo — dicek eksplisit karena `sessionModeProvider`
+  TIDAK otomatis `demo` di build `PREVIEW_MODE`, itu dua mekanisme
+  independen, lihat catatan di kode). Setor Cerdas Foto REUSE foto deteksi
+  AI-nya sendiri sebagai bukti, nggak minta foto kedua.
+- **Mode Pengiriman** (`DeliveryMode` enum) — 3 kartu pilihan: COD (Ketemu
+  Langsung), Antar Langsung (ke pengepul), Request Pengolah Datang (dijemput
+  — ini behavior default lama). Field alamat di bawahnya ganti
+  label/hint/placeholder otomatis sesuai mode yang dipilih (satu field,
+  bukan 3 field terpisah).
+- **Informasi Pengantaran** — tanggal (date picker) + slot waktu
+  (08:00–12:00/12:00–15:00/15:00–17:00), keduanya wajib.
+- **Informasi Tambahan** — catatan opsional.
+- Semua field baru ini (`PengantaranSection`, shared widget) dipasang di
+  KEDUA alur — Setor Manual DAN Setor Cerdas Foto — karena keduanya sama-
+  sama bikin `SubmissionModel` yang butuh logistik penjemputan yang sama.
+- **Jenis Sampah jadi drill-down 2 level** — sebelumnya tap kategori utama
+  (mis. "Kaca") langsung jadi `subtipe` final. Sekarang tap kategori utama
+  buka bottom sheet berisi ≥5 sub-jenis spesifik (persis contoh user: Kaca
+  → Botol Kecap/ABC/Bir/Cuka/Saus Sambal), baru sub-jenis itu yang jadi
+  `subtipe` final. Semua 9 kategori utama (4 organik + 5 anorganik) diisi
+  minimal 5 sub-jenis masing-masing — datanya di `const _organikJenis`/
+  `_anorganikJenis` di `setor_form_screen.dart`.
+
 ## 5. Yang BELUM dikerjakan / diketahui terbatas
 
 - Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
@@ -338,6 +472,20 @@ gaya project ini).
   saja per keputusan user 23 Agustus 2026; `dev` dibiarkan apa adanya, tidak
   disentuh/dihapus. Kalau nanti mau full-merge (ganti ke Supabase +
   ekspansi role), itu keputusan besar terpisah, belum dilakukan.
+- **Format `GEMINI_API_KEY_1` yang diisi user (23-24 Agustus 2026) tidak
+  biasa** — polanya (`AQ.Ab8RN6...`, 53 karakter) beda dari format API key
+  Gemini standar Google AI Studio (biasanya `AIzaSy...`). User bilang itu
+  valid, jadi tetap dipakai apa adanya — tapi kalau nanti Mode Foto Cerdas
+  error 401/403 terus di build normal (bukan demo), ini kandidat pertama
+  yang dicek. Cek ulang di aistudio.google.com/apikey kalau perlu.
+- Firebase Storage (`photo_upload_service.dart`) butuh project Firebase
+  BENERAN sudah dikonfigurasi (`flutterfire configure`, lihat Bagian 6) buat
+  upload foto bukti/foto deteksi jalan di build normal (non-demo, non-preview)
+  — `firebase_options.dart` masih placeholder per catatan lama, jadi upload
+  foto di jalur akun asli belum bisa dites sampai itu disiapkan.
+- Estimasi jumlah item dari Gemini Vision (`estimasi_jumlah`) cuma
+  ditampilkan sebagai info tambahan di layar Validasi Hasil AI, tidak
+  dipakai buat hitung apa pun (poin/berat tetap murni dari input manual user).
 - Ikon app (`assets/icon/app_icon*.png`) hasil recreate manual
   (`scripts/gen_icon.py`), BUKAN file asli dari user (belum pernah di-share
   sebagai file, cuma gambar di chat) — dipakai baik untuk ikon launcher
@@ -358,8 +506,16 @@ Sama seperti di `README.md`, dua hal ini butuh akun pribadi:
 2. **Groq API key** — daftar di console.groq.com, isi `.env` dari
    `.env.example`. Tanpa ini pun app tetap jalan (baik mode preview maupun
    normal), Insight AI dan Sari Chat cuma fallback ke pesan/jawaban mock.
+3. **Gemini API key** (BARU 24 Agustus 2026) — buat fitur "Setor Cerdas
+   Mode Foto". Isi `GEMINI_API_KEY_1` di `.env` (opsional `_2`/`_3` buat
+   fallback rate-limit). Tanpa ini, Mode Foto Cerdas di build normal bakal
+   error "Belum ada GEMINI_API_KEY_1/2/3 yang diatur" — tapi lewat login
+   "Akun Testing" atau build `PREVIEW_MODE=true` tetap jalan pakai
+   `FakeGeminiVisionService` (data dummy, tanpa API key sama sekali).
 
-`.env` sudah di-gitignore, jangan pernah commit isinya.
+`.env` sudah di-gitignore, jangan pernah commit isinya. Key yang sudah
+diisi user (`GEMINI_API_KEY_1`) cuma ada di file `.env` lokal masing-masing
+mesin — kalau pindah/clone repo baru, isi ulang manual.
 
 ## 7. Cara lanjut kerja di sesi berikutnya
 

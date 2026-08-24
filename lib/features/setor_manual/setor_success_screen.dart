@@ -9,9 +9,6 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/level_utils.dart';
 import '../../data/models/submission_model.dart';
 
-/// Simple estimate shown before admin verification actually credits points.
-int _estimatedPoin(double beratKg) => (beratKg * 10).round();
-
 class SetorSuccessScreen extends ConsumerWidget {
   const SetorSuccessScreen({super.key, required this.submission});
 
@@ -22,7 +19,7 @@ class SetorSuccessScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileProvider).valueOrNull;
     final name = profile?.name.isNotEmpty == true ? profile!.name : 'Sobat';
     final level = LevelProgress.fromPoin(profile?.poinSirkular ?? 0);
-    final estimasi = _estimatedPoin(submission.beratKg);
+    final estimasi = estimatedPoinFromKg(submission.beratKg);
     final beratLabel =
         NumberFormat.decimalPattern('id_ID').format(submission.beratKg);
 

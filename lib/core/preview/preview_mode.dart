@@ -20,4 +20,5 @@ final previewModeOverrides = <Override>[
   partnerRepositoryProvider.overrideWithValue(FakePartnerRepository()),
   contentRepositoryProvider.overrideWithValue(FakeContentRepository()),
   groqServiceProvider.overrideWithValue(FakeGroqService()),
+  geminiVisionServiceProvider.overrideWithValue(FakeGeminiVisionService()),
 ];

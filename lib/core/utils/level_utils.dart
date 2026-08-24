@@ -1,3 +1,8 @@
+/// Simple estimate shown before admin verification actually credits points.
+/// Shared by every setor flow (manual, voice, foto) so the number is
+/// consistent wherever it's previewed.
+int estimatedPoinFromKg(double beratKg) => (beratKg * 10).round();
+
 /// Pure presentation helper deriving a gamified level/progress ring from
 /// `poinSirkular`. Not a backend field — purely derived for the UI.
 class LevelProgress {

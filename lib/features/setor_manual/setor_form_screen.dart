@@ -1,30 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../core/preview/preview_mode.dart';
 import '../../core/providers/data_providers.dart';
 import '../../core/providers/repository_providers.dart';
+import '../../core/services/photo_upload_service.dart';
 import '../../core/session/guest_gate.dart';
 import '../../core/session/session_mode.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/partner_actor_model.dart';
 import '../../data/models/submission_model.dart';
+import '../../shared/widgets/image_source_sheet.dart';
+import '../../shared/widgets/section_header.dart';
+import 'widgets/foto_bukti_field.dart';
+import 'widgets/pengantaran_section.dart';
 
-const _organikSubtipe = [
-  'Sisa Sayur & Buah',
-  'Sisa Makanan',
-  'Ampas Kopi',
-  'Sampah Organik Dapur',
-];
+/// Main jenis sampah -> at least 5 specific sub-jenis each, so users pick a
+/// precise item instead of a vague catch-all category.
+const _organikJenis = {
+  'Sisa Sayur & Buah': [
+    'Sisa Sayuran',
+    'Kulit Buah',
+    'Buah Busuk',
+    'Batang & Daun Sayur',
+    'Sisa Salad',
+  ],
+  'Sisa Makanan': [
+    'Nasi Sisa',
+    'Lauk Sisa',
+    'Roti Basi',
+    'Mie/Pasta Sisa',
+    'Sisa Gorengan',
+  ],
+  'Ampas Kopi': [
+    'Ampas Kopi Giling',
+    'Ampas Kopi Saring',
+    'Ampas Kopi Tubruk',
+    'Ampas Kopi Instan',
+    'Kantong Teh Bekas',
+  ],
+  'Sampah Organik Dapur': [
+    'Kulit Telur',
+    'Kulit Bawang',
+    'Tulang Ikan/Ayam',
+    'Ampas Kelapa',
+    'Sisa Sayur Mentah',
+  ],
+};
 
-const _anorganikSubtipe = [
-  'Botol Plastik PET',
-  'Kardus & Kertas',
-  'Logam & Kaleng',
-  'Kaca',
-  'Plastik Lainnya',
-];
+const _anorganikJenis = {
+  'Botol Plastik PET': [
+    'Botol Air Mineral',
+    'Botol Soda',
+    'Botol Jus',
+    'Botol Minyak Goreng',
+    'Botol Sirup Plastik',
+  ],
+  'Kardus & Kertas': [
+    'Kardus Bekas',
+    'Kertas HVS',
+    'Koran Bekas',
+    'Kertas Karton',
+    'Kertas Majalah',
+  ],
+  'Logam & Kaleng': [
+    'Kaleng Minuman',
+    'Kaleng Makanan',
+    'Tutup Botol Logam',
+    'Kawat & Kabel',
+    'Panci/Wajan Rusak',
+  ],
+  'Kaca': [
+    'Botol Kecap',
+    'Botol ABC',
+    'Botol Bir',
+    'Botol Cuka Kaca',
+    'Botol Saus Sambal',
+  ],
+  'Plastik Lainnya': [
+    'Kantong Plastik',
+    'Sedotan Plastik',
+    'Kemasan Sachet',
+    'Ember/Baskom Plastik',
+    'Mainan Plastik Rusak',
+  ],
+};
 
 const _subtipeIcons = {
   'Sisa Sayur & Buah': Icons.eco_rounded,
@@ -50,27 +113,113 @@ class SetorFormScreen extends ConsumerStatefulWidget {
 class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _beratController = TextEditingController();
+  final _alamatController = TextEditingController();
+  final _catatanController = TextEditingController();
+  String? _mainJenis;
   String? _subtipe;
   PartnerActorModel? _partner;
+  String? _fotoBuktiPath;
+  DeliveryMode? _deliveryMode;
+  DateTime? _tanggalPengantaran;
+  String? _waktuPengantaran;
   bool _submitting = false;
+  String? _fotoError;
 
   bool get _isOrganik => widget.kategori == WasteCategory.organik;
 
   @override
   void dispose() {
     _beratController.dispose();
+    _alamatController.dispose();
+    _catatanController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _subtipe == null) {
-      if (_subtipe == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pilih jenis sampah dulu ya.')),
-        );
-      }
-      return;
+  Future<void> _pickJenis(String mainLabel, Color accentColor) async {
+    final options = (_isOrganik ? _organikJenis : _anorganikJenis)[mainLabel]!;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(_subtipeIcons[mainLabel] ?? Icons.delete_outline_rounded,
+                      color: accentColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text('Sub Jenis $mainLabel', style: AppTextStyles.h2),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('Pilih yang paling sesuai',
+                  style: AppTextStyles.captionMuted),
+              const SizedBox(height: 12),
+              for (final option in options) ...[
+                InkWell(
+                  onTap: () => Navigator.of(sheetContext).pop(option),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 4, vertical: 13),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(option, style: AppTextStyles.body),
+                        ),
+                        Icon(Icons.chevron_right_rounded,
+                            color: AppColors.textMuted, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                if (option != options.last)
+                  const Divider(height: 1),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _mainJenis = mainLabel;
+        _subtipe = picked;
+      });
     }
+  }
+
+  Future<void> _pickFotoBukti() async {
+    final source = await showImageSourceSheet(context,
+        title: 'Foto Bukti Sampah');
+    if (source == null || !mounted) return;
+    final photo = await ImagePicker().pickImage(source: source, imageQuality: 85);
+    if (photo == null) return;
+    setState(() {
+      _fotoBuktiPath = photo.path;
+      _fotoError = null;
+    });
+  }
+
+  Future<void> _submit() async {
+    final formOk = _formKey.currentState!.validate();
+    setState(() => _fotoError =
+        _fotoBuktiPath == null ? 'Foto bukti sampah wajib diisi' : null);
+    if (_subtipe == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih jenis sampah dulu ya.')),
+      );
+    }
+    if (!formOk || _subtipe == null || _fotoBuktiPath == null) return;
+
     if (ref.read(sessionModeProvider) == SessionMode.guest) {
       await showGuestRegisterGate(context);
       return;
@@ -81,6 +230,16 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
 
     setState(() => _submitting = true);
     try {
+      final photo = XFile(_fotoBuktiPath!);
+      final bytes = await photo.readAsBytes();
+      final isDemo = kPreviewMode ||
+          ref.read(sessionModeProvider) == SessionMode.demo;
+      final fotoUrl = await uploadSubmissionPhoto(
+        uid: uid,
+        bytes: bytes,
+        useFake: isDemo,
+      );
+
       final submission = SubmissionModel(
         id: '',
         uid: uid,
@@ -89,6 +248,14 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
         beratKg: double.parse(_beratController.text.replaceAll(',', '.')),
         partnerId: _partner?.id,
         partnerName: _partner?.nama,
+        fotoUrl: fotoUrl,
+        alamat: _alamatController.text.trim(),
+        tanggalPengantaran: _tanggalPengantaran,
+        waktuPengantaran: _waktuPengantaran,
+        catatan: _catatanController.text.trim().isEmpty
+            ? null
+            : _catatanController.text.trim(),
+        deliveryMode: _deliveryMode,
       );
       await ref.read(submissionRepositoryProvider).create(submission);
       if (mounted) {
@@ -101,7 +268,8 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final subtipeOptions = _isOrganik ? _organikSubtipe : _anorganikSubtipe;
+    final jenisMap = _isOrganik ? _organikJenis : _anorganikJenis;
+    final mainOptions = jenisMap.keys.toList();
     final accentColor = _isOrganik ? AppColors.organik : AppColors.anorganik;
     final partnersAsync = ref.watch(partnersProvider);
 
@@ -128,16 +296,18 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
                   ),
                   child: Column(
                     children: [
-                      for (final option in subtipeOptions) ...[
+                      for (final option in mainOptions) ...[
                         _JenisSampahTile(
                           icon: _subtipeIcons[option] ??
                               Icons.delete_outline_rounded,
                           label: option,
+                          selectedSubtipe:
+                              _mainJenis == option ? _subtipe : null,
                           accentColor: accentColor,
-                          selected: _subtipe == option,
-                          onTap: () => setState(() => _subtipe = option),
+                          selected: _mainJenis == option,
+                          onTap: () => _pickJenis(option, accentColor),
                         ),
-                        if (option != subtipeOptions.last)
+                        if (option != mainOptions.last)
                           const Divider(height: 1, indent: 14, endIndent: 14),
                       ],
                     ],
@@ -185,6 +355,35 @@ class _SetorFormScreenState extends ConsumerState<SetorFormScreen> {
                 error: (_, _) => Text('Gagal memuat daftar mitra.',
                     style: AppTextStyles.captionMuted),
               ),
+              const SizedBox(height: 20),
+              const SectionHeader(
+                title: 'Foto Bukti Sampah',
+                subtitle: 'Buat verifikasi mitra pengolah',
+              ),
+              const SizedBox(height: 12),
+              FotoBuktiField(
+                imagePath: _fotoBuktiPath,
+                onPick: _pickFotoBukti,
+                errorText: _fotoError,
+              ),
+              if (_fotoError != null) ...[
+                const SizedBox(height: 6),
+                Text(_fotoError!,
+                    style: AppTextStyles.captionMuted
+                        .copyWith(color: AppColors.error)),
+              ],
+              const SizedBox(height: 20),
+              PengantaranSection(
+                mode: _deliveryMode,
+                onModeChanged: (v) => setState(() => _deliveryMode = v),
+                alamatController: _alamatController,
+                catatanController: _catatanController,
+                tanggal: _tanggalPengantaran,
+                onTanggalChanged: (v) =>
+                    setState(() => _tanggalPengantaran = v),
+                waktu: _waktuPengantaran,
+                onWaktuChanged: (v) => setState(() => _waktuPengantaran = v),
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -214,6 +413,7 @@ class _JenisSampahTile extends StatelessWidget {
   const _JenisSampahTile({
     required this.icon,
     required this.label,
+    required this.selectedSubtipe,
     required this.accentColor,
     required this.selected,
     required this.onTap,
@@ -221,6 +421,7 @@ class _JenisSampahTile extends StatelessWidget {
 
   final IconData icon;
   final String label;
+  final String? selectedSubtipe;
   final Color accentColor;
   final bool selected;
   final VoidCallback onTap;
@@ -252,7 +453,22 @@ class _JenisSampahTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(label, style: AppTextStyles.bodyBold)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: AppTextStyles.bodyBold),
+                  if (selectedSubtipe != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      selectedSubtipe!,
+                      style: AppTextStyles.captionMuted
+                          .copyWith(color: accentColor),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             const SizedBox(width: 8),
             SizedBox(
               height: 34,
@@ -260,7 +476,7 @@ class _JenisSampahTile extends StatelessWidget {
                   ? ElevatedButton.icon(
                       onPressed: onTap,
                       icon: const Icon(Icons.check_rounded, size: 15),
-                      label: const Text('Dipilih'),
+                      label: const Text('Ubah'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentColor,
                         foregroundColor: Colors.white,

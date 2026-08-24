@@ -4,11 +4,13 @@ import '../../data/models/partner_actor_model.dart';
 import '../../data/models/points_transaction_model.dart';
 import '../../data/models/submission_model.dart';
 import '../../data/models/user_model.dart';
+import '../../data/models/waste_detection_result.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../data/repositories/content_repository.dart';
 import '../../data/repositories/partner_repository.dart';
 import '../../data/repositories/points_repository.dart';
 import '../../data/repositories/submission_repository.dart';
+import '../services/gemini_vision_service.dart';
 import '../services/groq_service.dart';
 
 /// In-memory fake repositories backed by sample data, shared by both the
@@ -381,6 +383,12 @@ class FakeSubmissionRepository implements SubmissionRepositoryBase {
         status: SubmissionStatus.pending,
         source: submission.source,
         createdAt: DateTime.now(),
+        fotoUrl: submission.fotoUrl,
+        alamat: submission.alamat,
+        tanggalPengantaran: submission.tanggalPengantaran,
+        waktuPengantaran: submission.waktuPengantaran,
+        catatan: submission.catatan,
+        deliveryMode: submission.deliveryMode,
       ),
     );
   }
@@ -496,5 +504,41 @@ class FakeGroqService extends GroqService {
     }
     return 'Aku bisa bantu soal Poin Sirkular, cara setor sampah, atau jadwal '
         'jemput mitra terdekat. Coba tanya salah satu topik itu ya.';
+  }
+}
+
+const _sampleDetections = [
+  WasteDetectionResult(
+    kategori: WasteCategory.anorganik,
+    jenisMaterial: 'Plastik',
+    subJenis: 'Botol Plastik PET',
+    estimasiJumlah: 2,
+    confidence: WasteConfidence.tinggi,
+  ),
+  WasteDetectionResult(
+    kategori: WasteCategory.organik,
+    jenisMaterial: 'Sisa Makanan',
+    subJenis: 'Sisa Sayur & Buah',
+    estimasiJumlah: null,
+    confidence: WasteConfidence.sedang,
+  ),
+  WasteDetectionResult(
+    kategori: WasteCategory.anorganik,
+    jenisMaterial: 'Kertas',
+    subJenis: 'Kardus & Kertas',
+    estimasiJumlah: 1,
+    confidence: WasteConfidence.rendah,
+  ),
+];
+
+class FakeGeminiVisionService extends GeminiVisionService {
+  @override
+  bool get isConfigured => true;
+
+  @override
+  Future<WasteDetectionResult> analyze(List<int> imageBytes) async {
+    await Future.delayed(const Duration(milliseconds: 900));
+    return _sampleDetections[
+        DateTime.now().millisecondsSinceEpoch % _sampleDetections.length];
   }
 }

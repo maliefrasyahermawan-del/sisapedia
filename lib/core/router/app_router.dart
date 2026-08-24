@@ -16,6 +16,7 @@ import '../../features/profile/panduan_screen.dart';
 import '../../features/profile/profil_screen.dart';
 import '../../features/profile/static_info_screen.dart';
 import '../../features/sari_chat/sari_chat_screen.dart';
+import '../../features/setor_foto/foto_konfirmasi_screen.dart';
 import '../../features/setor_manual/setor_form_screen.dart';
 import '../../features/setor_manual/setor_success_screen.dart';
 import '../../features/splash/splash_screen.dart';
@@ -60,6 +61,33 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
       ),
+      // NOTE: go_router matches sibling routes in declaration order, and
+      // `:kategori` matches ANY single segment (including "sukses" or
+      // "foto-konfirmasi") — so the literal /setor/... routes below MUST be
+      // declared before the /setor/:kategori wildcard, or they'll never be
+      // reached (kategori would just be the literal string "sukses" etc.,
+      // silently falling back to WasteCategory.organik).
+      GoRoute(
+        path: '/setor/sukses',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          return SetorSuccessScreen(
+              submission: state.extra as SubmissionModel);
+        },
+      ),
+      GoRoute(
+        path: '/setor/foto-konfirmasi',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final args = state.extra as FotoDeteksiArgs;
+          return FotoKonfirmasiScreen(
+            uid: args.uid,
+            imagePath: args.imagePath,
+            imageBytes: args.imageBytes,
+            result: args.result,
+          );
+        },
+      ),
       GoRoute(
         path: '/setor/:kategori',
         parentNavigatorKey: _rootNavigatorKey,
@@ -68,14 +96,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               ? WasteCategory.anorganik
               : WasteCategory.organik;
           return SetorFormScreen(kategori: kategori);
-        },
-      ),
-      GoRoute(
-        path: '/setor/sukses',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          return SetorSuccessScreen(
-              submission: state.extra as SubmissionModel);
         },
       ),
       GoRoute(
