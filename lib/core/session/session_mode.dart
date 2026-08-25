@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
 
 /// How the current session is authenticated: a real Firebase account, a
-/// guest browsing without an account, or a local demo/testing account
-/// pre-filled with mock data.
-enum SessionMode { normal, guest, demo }
+/// guest browsing without an account, a local demo/testing account
+/// pre-filled with mock data (role Sumber), or a local demo/testing account
+/// for role Pengolah (`pengolahDemo`) — entirely separate UI/data from the
+/// Sumber app, does not touch any Sumber repository/provider.
+enum SessionMode { normal, guest, demo, pengolahDemo }
 
 final sessionModeProvider =
     StateProvider<SessionMode>((ref) => SessionMode.normal);

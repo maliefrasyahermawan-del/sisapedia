@@ -27,14 +27,18 @@ class PointsRepository implements PointsRepositoryBase {
   @override
   Stream<List<PointsTransactionModel>> watchUserTransactions(String uid,
       {int limit = 20}) {
-    return _ref
-        .where('uid', isEqualTo: uid)
-        .orderBy('created_at', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => PointsTransactionModel.fromMap(d.id, d.data()))
-            .toList());
+    // Single `where` + client-side sort/limit — see the matching comment in
+    // submission_repository.dart for why (`orderBy` on a field different
+    // from the equality filter needs a composite index that doesn't exist
+    // yet on a fresh project).
+    return _ref.where('uid', isEqualTo: uid).snapshots().map((snap) {
+      final items = snap.docs
+          .map((d) => PointsTransactionModel.fromMap(d.id, d.data()))
+          .toList()
+        ..sort((a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      return items.take(limit).toList();
+    });
   }
 
   @override

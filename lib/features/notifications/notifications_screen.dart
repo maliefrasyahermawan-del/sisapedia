@@ -21,7 +21,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(notificationsProvider.notifier).markAllRead();
+      markAllNotificationsRead(ref);
     });
   }
 
@@ -35,7 +35,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notifications = ref.watch(notificationsProvider);
+    final notifications = ref.watch(notificationsListProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,

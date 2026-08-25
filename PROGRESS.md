@@ -2,16 +2,30 @@
 
 > Dokumen ini dibaca dulu di sesi baru sebelum menyentuh kode. Isinya: cara
 > build/extract APK, peta file penting, keputusan desain sesi ini, dan config
-> yang perlu disiapkan manual. Update terakhir: **24 Agustus 2026** (fitur
-> "Setor Cerdas Mode Foto" pakai Gemini Vision — lihat Bagian 4f).
+> yang perlu disiapkan manual. Update terakhir: **26 Agustus 2026** — project
+> Firebase **`sisapedia`** sudah beneran dikonfigurasi (bukan placeholder
+> lagi), dan Akun Testing Sumber + Akun Pengolah (Testing) sekarang jadi
+> **identitas Firebase nyata yang sama** lintas HP, dengan alur pertukaran
+> setor sampah real-time lengkap (konfirmasi → kirim → terima → verifikasi →
+> poin + QR) — lihat Bagian 4h. Ada **bug router** yang ketemu pas user tes
+> di HP (masuk Akun Pengolah malah balik ke tampilan Sumber) — sudah
+> diperbaiki, lihat Bagian 4i.
 
 ## 1. Status singkat
 
-Fase 1 — role **Sumber** (warga/pemilah sampah) saja. Role Pengolah &
-DLH-Admin belum dikerjakan (lihat Bagian 5). Register sudah punya UI pilihan
-role ("Saya Sumber" / "Saya Pengolah") tapi "Saya Pengolah" sengaja
-non-fungsional ("Segera hadir") — semua akun baru tetap terdaftar sebagai
-Sumber.
+Fase 1 — role **Sumber** (warga/pemilah sampah) tetap jalur utama (Firebase
+asli, register, dsb). Role **Pengolah** punya jalur testing cepat (tombol
+Login "Masuk sebagai Akun Pengolah (Testing)" → langsung ke UI Pengolah,
+tanpa daftar) — awalnya (25 Agt, Bagian 4g) data mock lokal per-device, tapi
+sejak 26 Agustus (Bagian 4h) **kedua tombol testing (Sumber & Pengolah)
+sign-in ke akun Firebase tetap yang sama** sehingga 2 HP berbeda (satu login
+Akun Testing, satu login Akun Pengolah Testing) bisa saling lihat & bertukar
+data submission secara real-time lewat Firestore — ini yang bikin simulasi
+"2 HP" yang diminta user bisa jalan. Role **DLH-Admin** masih belum
+dikerjakan sama sekali (lihat Bagian 5). Register sumber masih punya UI
+pilihan role ("Saya Sumber" / "Saya Pengolah") dan "Saya Pengolah" di form
+itu tetap non-fungsional ("Segera hadir") — jalur Pengolah yang beneran
+jalan adalah tombol testing di Login, bukan lewat form Daftar.
 
 Checkpoint git: lihat `git log --oneline -6`. Rangkaian commit dari sesi
 **22–24 Agustus 2026**: (1) redesign Beranda header/kartu poin + layar
@@ -30,17 +44,25 @@ Bagian 4, 4b, 4d, 4e, 4f.
 App ini punya dua mode jalan:
 
 - **Mode normal** (produksi/dev asli): butuh Firebase project + Groq API key
-  sendiri (lihat `README.md` Bagian "Setup wajib").
+  sendiri (lihat `README.md` Bagian "Setup wajib"). **Sejak 26 Agustus 2026,
+  project Firebase `sisapedia` sudah dikonfigurasi beneran** (lihat Bagian
+  4h) — `lib/firebase_options.dart` sudah keisi config asli, BUKAN
+  placeholder lagi. Mode ini WAJIB dipakai kalau mau coba fitur pertukaran
+  setor real-time 2 HP (Bagian 4h), karena Akun Testing Sumber/Pengolah baru
+  benar-benar terhubung lewat Firestore di mode ini.
 - **Mode Preview** (`PREVIEW_MODE=true`): jalan 100% dari data mock di
   `lib/core/preview/preview_mode.dart`, tidak butuh Firebase/Groq sama
-  sekali. **Ini mode yang dipakai untuk semua APK yang sudah di-generate dan
-  divalidasi di sesi-sesi sebelumnya.**
+  sekali — TAPI di mode ini Akun Testing Sumber/Pengolah balik jadi data
+  mock lokal per-device (TIDAK saling terhubung), karena tidak ada Firebase
+  yang di-init sama sekali. Pakai mode ini kalau cuma mau lihat UI tanpa
+  internet/Firebase, bukan untuk simulasi 2 HP.
 
 ```bash
 cd "D:\Portofolio Alif 2\Project 55 - SisaPedia Mobile App"
 flutter pub get
 flutter analyze --no-fatal-infos      # pastikan bersih sebelum build
-flutter build apk --release --dart-define=PREVIEW_MODE=true
+flutter build apk --release           # mode normal, WAJIB untuk fitur 2 HP (Bagian 4h)
+# ATAU: flutter build apk --release --dart-define=PREVIEW_MODE=true   (mode preview, offline)
 ```
 
 Hasil APK selalu di path yang sama (build ulang menimpa file lama):
@@ -49,21 +71,29 @@ Hasil APK selalu di path yang sama (build ulang menimpa file lama):
 build\app\outputs\flutter-apk\app-release.apk
 ```
 
-Build terakhir (24 Agustus 2026, setelah fitur Setor Cerdas Mode Foto +
-upgrade Setor Manual): **57.2MB**, berhasil, `flutter analyze` bersih (0
-issues). Ada 1 warning Gradle soal Kotlin Gradle Plugin (`firebase_storage`,
-`speech_to_text`) — tidak fatal, aman diabaikan untuk saat ini.
+Build terakhir (26 Agustus 2026, mode **normal** — bukan PREVIEW_MODE — setelah
+fitur pertukaran setor real-time Sumber<->Pengolah, Bagian 4h): **57.7MB**,
+berhasil, `flutter analyze` bersih (0 issues, cuma 2 info style yang
+diabaikan). Ada 1 warning Gradle soal Kotlin Gradle Plugin
+(`firebase_storage`, `speech_to_text`) — tidak fatal, aman diabaikan untuk
+saat ini (sama seperti build-build sebelumnya).
 
-> Catatan: login "Masuk sebagai Akun Testing" (Bagian 4) sekarang jadi cara
-> paling gampang untuk lihat app terisi data mock **tanpa** perlu build
-> `--dart-define=PREVIEW_MODE=true` — cukup build/`flutter run` mode normal
-> lalu tekan tombol itu di layar Login. `PREVIEW_MODE` compile-time tetap ada
-> dan tidak berubah perilakunya (dipakai kalau mau APK yang *selalu* mock
-> dari awal buka app, tanpa harus lewat tombol Login).
+> Catatan (BERUBAH per 26 Agustus 2026): login "Masuk sebagai Akun Testing"
+> dan "Masuk sebagai Akun Pengolah (Testing)" sekarang **sign-in ke akun
+> Firebase Authentication nyata** yang sama tiap kali ditekan (lihat
+> `lib/core/session/testing_accounts.dart`) — bukan lagi cuma
+> `sessionModeProvider` lokal + data Fake seperti sebelumnya (Bagian 4b),
+> KECUALI kalau app di-build dengan `PREVIEW_MODE=true`, yang tetap
+> mempertahankan perilaku lama (offline, data Fake, per-device). Efeknya:
+> tekan tombol itu di 2 HP berbeda pakai APK mode normal → keduanya login
+> ke identitas Firebase yang SAMA persis → bisa saling lihat data via
+> Firestore. `PREVIEW_MODE` compile-time tetap ada untuk kasus "mau lihat UI
+> tanpa Firebase sama sekali", tapi TIDAK BISA dipakai untuk simulasi 2 HP.
 
 Untuk jalan langsung ke device/emulator tanpa build APK:
 ```bash
-flutter run --dart-define=PREVIEW_MODE=true
+flutter run                                        # mode normal, fitur 2 HP aktif
+flutter run --dart-define=PREVIEW_MODE=true         # mode preview, offline
 ```
 
 ## 3. Peta file penting
@@ -71,7 +101,16 @@ flutter run --dart-define=PREVIEW_MODE=true
 ```
 lib/
   app.dart                          — root MaterialApp.router (banner PRATINJAU sudah dihapus)
-  main.dart                         — entrypoint, load .env, init Firebase (dilewati kalau PREVIEW_MODE)
+  main.dart                         — entrypoint, load .env, init Firebase (dilewati kalau PREVIEW_MODE).
+                                       BERUBAH (26 Agt): setelah init Firebase, cek kalau user yang
+                                       lagi login persisted itu salah satu akun testing (email cocok
+                                       `kTestingSumberAccount`/`kTestingPengolahAccount`) → signOut
+                                       paksa, supaya akun testing tetap "reset tiap restart app"
+                                       seperti perilaku lama meski sekarang Firebase Auth-nya beneran
+                                       persisted (lihat Bagian 4h untuk kenapa ini perlu)
+  firebase_options.dart             — BERUBAH (26 Agt): config ASLI project Firebase `sisapedia`
+                                       (dari `flutterfire configure`), BUKAN placeholder lagi — cuma
+                                       `web` yang masih placeholder (app ini tidak target web)
   core/
     preview/
       fake_repositories.dart        — BARU (22 Agt): semua kelas Fake*Repository + data mock,
@@ -80,22 +119,43 @@ lib/
       preview_mode.dart             — sekarang cuma `kPreviewMode` flag + `previewModeOverrides`
                                        (compile-time), datanya sendiri ada di fake_repositories.dart
     session/                        — BARU (22 Agt): infra login Tamu/Akun Testing
-      session_mode.dart             — `SessionMode` enum (normal/guest/demo) + `sessionModeProvider`
-                                       + `kGuestUid`/`guestUserModel`
+      session_mode.dart             — `SessionMode` enum (normal/guest/demo/pengolahDemo, BARU 25 Agt)
+                                       + `sessionModeProvider` + `kGuestUid`/`guestUserModel`
       guest_gate.dart                — dialog "Anda Belum Terdaftar" dipakai saat tamu coba setor
+      testing_accounts.dart          — BARU (26 Agt): `kTestingSumberAccount`/`kTestingPengolahAccount`
+                                       (email/password TETAP, hardcoded) + `signInTestingAccount()` —
+                                       create-lalu-fallback-signIn ke akun Firebase Auth NYATA yang
+                                       sama persis tiap device, ini akar dari fitur 2 HP (Bagian 4h)
     utils/level_utils.dart          — BARU (22 Agt): `LevelProgress.fromPoin()`, hitung level/ring
                                        progress dari poinSirkular (presentasi saja, tiap 2000 poin
                                        naik 1 level) — dipakai kartu poin Beranda & layar sukses setor
+    services/
+      submission_flow_service.dart  — BARU (26 Agt): state machine pertukaran setor Sumber<->Pengolah
+                                       (`SubmissionFlowService`, lihat Bagian 4h) — SENGAJA terpisah
+                                       dari `SubmissionRepositoryBase`, tidak ada versi Fake/offline
+                                       (hanya masuk akal dengan backend nyata), layar yang memakainya
+                                       hanya dijangkau saat `!kPreviewMode`
     providers/
       data_providers.dart           — provider Riverpod untuk articles/partners/events/dashboard
-      notification_providers.dart   — state notifikasi (seed + markAllRead)
-      repository_providers.dart     — tiap repo provider sekarang cek `sessionModeProvider`: demo
-                                       → Fake*Repository (dari fake_repositories.dart), guest →
-                                       `userProfileProvider` balik `guestUserModel` langsung, normal
-                                       → repository Firestore asli
+      notification_providers.dart   — `notificationsListProvider` (BARU 26 Agt) pilih otomatis: akun
+                                       Sumber testing yang tersambung Firestore → notifikasi asli
+                                       (koleksi `notifications`, ditulis `SubmissionFlowService`),
+                                       selainnya (tamu/normal/preview) → seed lokal lama;
+                                       `markAllNotificationsRead(ref)` gantikan pemanggilan langsung
+                                       `.notifier.markAllRead()` di NotificationsScreen
+      repository_providers.dart     — BERUBAH (26 Agt): `authRepositoryProvider`/
+                                       `submissionRepositoryProvider`/`pointsRepositoryProvider`
+                                       sekarang HANYA fake kalau `kPreviewMode` (compile-time) — bukan
+                                       lagi berdasar `sessionMode == demo`. Efeknya Akun Testing Sumber
+                                       & Akun Pengolah (Testing) di build normal sekarang pakai
+                                       Firestore asli (lihat Bagian 4h), bukan `Fake*Repository` lagi.
+                                       `partner`/`content`/Groq/Gemini TETAP gated ke `sessionMode ==
+                                       demo` seperti sebelumnya (tidak berubah, tidak terkait fitur ini)
     router/app_router.dart          — redirect guard sekarang juga cek sessionMode (tamu/demo lolos
                                        tanpa uid Firebase asli); route BARU: /setor/sukses,
-                                       /setor/foto-konfirmasi. **PENTING (bug fix 24 Agt)**: route
+                                       /setor/foto-konfirmasi, /pengolah (BARU 25 Agt, shell mandiri
+                                       role Pengolah — redirect dari Login otomatis ke sini kalau
+                                       sessionMode == pengolahDemo, lihat Bagian 4g). **PENTING (bug fix 24 Agt)**: route
                                        literal (/setor/sukses, /setor/foto-konfirmasi) HARUS
                                        dideklarasikan SEBELUM /setor/:kategori — go_router cocokin
                                        sibling routes berurutan sesuai deklarasi, dan `:kategori`
@@ -125,15 +185,37 @@ lib/
                                        tanggalPengantaran, waktuPengantaran, catatan,
                                        DeliveryMode enum (cod/antarLangsung/requestPengolah) —
                                        semua nullable/additive, nggak ganggu kode lama.
+                                       BERUBAH LAGI (26 Agt, Bagian 4h): + `namaSumber` (nama Sumber
+                                       didenormalisasi saat create, biar antrean Pengolah nggak perlu
+                                       lookup `users/{uid}` tiap item), + `SubmissionFlowStatus` enum
+                                       (10 state, lihat Bagian 4h) & field-field terkait
+                                       (`flowStatus`, `pengolahUid/Nama/Telepon`, `koreksiKategori/
+                                       Subtipe/BeratKg`, `catatanVerifikasi`, `finalPoin`,
+                                       `qrPayload`, 3 timestamp tambahan), + `copyWith({id})`.
+                                       `NegosiasiKeputusan` enum (3 pilihan Sumber) di file yang sama.
                                        waste_detection_result.dart BARU: WasteDetectionResult +
                                        WasteConfidence enum, dipakai GeminiVisionService
-    repositories/                   — implementasi asli (Firestore), dipakai kalau sessionMode normal
+    repositories/                   — implementasi asli (Firestore), dipakai kalau `!kPreviewMode`
+                                       (BERUBAH 26 Agt — dulu berdasar sessionMode, lihat catatan
+                                       `repository_providers.dart` di atas).
+                                       submission_repository.dart: `create()` sekarang balikin id
+                                       (`Future<String>`, bukan `Future<void>`) + method baru
+                                       `watchSubmission(id)` (realtime 1 dokumen, dipakai layar
+                                       progress). `watchUserSubmissions()` DIUBAH dari
+                                       `.where().orderBy().limit()` jadi `.where()` + sort/limit di
+                                       client — query `where` + `orderBy` field beda butuh composite
+                                       index Firestore yang belum ada di project baru, jadi
+                                       dihindari sekalian (lihat juga points_repository.dart yang
+                                       kena perubahan sama untuk alasan sama)
   features/
     home/
       beranda_screen.dart           — uid Beranda sekarang fallback ke `kGuestUid` saat tamu supaya
-                                       layar tidak stuck loading
+                                       layar tidak stuck loading. BERUBAH (26 Agt, Bagian 4j): teruskan
+                                       `onLihatStatusSetoran` baru ke `SetorActionsSection`
       widgets/beranda_header.dart   — REDESIGN (22 Agt): gradasi hijau, salam berbasis jam
                                        (pagi/siang/sore/malam), sesuai referensi desain
+      widgets/setor_actions_section.dart — BERUBAH (26 Agt, Bagian 4j): + kartu "Lihat Status Setoran
+                                       Sampah" (`_StatusSetoranCard`) di bawah kartu Wilayah Pencocokan
       widgets/points_card.dart      — REDESIGN (22 Agt): kartu gradasi hijau tua + ring progress
                                        level, badge "LV. n", label "PENGUMPUL RAJIN" — ganti total
                                        dari kartu putih lama (tombol Share dihapus, tidak ada di
@@ -146,10 +228,28 @@ lib/
                                        (mis. "Kaca") buka bottom sheet berisi ≥5 sub-jenis spesifik
                                        (`_pickJenis()`, data di `const _organikJenis`/`_anorganikJenis`).
                                        Foto bukti wajib (`FotoBuktiField`) + `PengantaranSection`
-                                       (mode pengiriman/alamat/jadwal/catatan) ditambahkan di sini
-      setor_success_screen.dart     — layar sukses full-screen, estimasi poin (`estimatedPoinFromKg()`
-                                       di `level_utils.dart`, BUKAN lagi private di file ini) +
-                                       status "menunggu verifikasi"
+                                       (mode pengiriman/alamat/jadwal/catatan) ditambahkan di sini.
+                                       BERUBAH (26 Agt): submit isi `namaSumber` dari
+                                       `userProfileProvider`, tangkap id balikan `create()`, push
+                                       `submission.copyWith(id: id)` ke `/setor/sukses`
+      setor_success_screen.dart     — DIHAPUS (26 Agt), digantikan `setor_progress_screen.dart`
+                                       (lihat Bagian 4h) — poin TIDAK lagi langsung "estimasi
+                                       ditampilkan", sekarang beneran nunggu Pengolah lewat live
+                                       tracker sebelum poin masuk
+      setor_progress_screen.dart    — BARU (26 Agt): `SetorProgressScreen`, dipasang di route
+                                       `/setor/sukses` (nama path TETAP dipakai — sengaja, biar
+                                       nggak perlu nambah literal route baru di atas
+                                       `/setor/:kategori`, lihat catatan bug 24 Agt di atasnya).
+                                       `StreamBuilder` ke `watchSubmission(id)`, render timeline
+                                       tahap + kartu kontekstual sesuai `flowStatus` (nunggu/kontak
+                                       Pengolah/diverifikasi/negosiasi/QR sukses/gagal). Tombol
+                                       negosiasi manggil `submissionFlowServiceProvider` — lihat
+                                       Bagian 4h untuk detail state machine lengkap
+      setoran_status_list_screen.dart — BARU (26 Agt, Bagian 4j): `SetoranStatusListScreen`, route
+                                       `/setor/status` — list SEMUA submission user (reuse
+                                       `watchUserSubmissions()`, bukan provider baru) + chip status,
+                                       tap item buka `SetorProgressScreen` yang sama. Empty state
+                                       "Status Setoran: Kosong" kalau belum pernah setor
       widgets/                      — BARU (24 Agt): dipakai bareng Setor Manual & Setor Cerdas Foto
         pengantaran_section.dart    — `PengantaranSection`: pilihan Mode Pengiriman (COD/Antar
                                        Langsung/Request Pengolah Datang, `DeliveryMode` enum di
@@ -177,19 +277,61 @@ lib/
                                        `Icons.psychology_rounded`, lihat Bagian 4f)
     auth/
       login_screen.dart             — REDESIGN (22 Agt) sesuai referensi HTML + tombol baru "Masuk
-                                       sebagai Tamu" dan "Masuk sebagai Akun Testing"
+                                       sebagai Tamu" dan "Masuk sebagai Akun Testing"; tombol BARU
+                                       (25 Agt) "Masuk sebagai Akun Pengolah (Testing)" — lihat 4g.
+                                       BERUBAH LAGI (26 Agt): `_enterAs()` untuk 2 tombol testing
+                                       sekarang `async` — panggil `signInTestingAccount()` (Firebase
+                                       Auth nyata) dulu sebelum set sessionMode, kecuali kalau
+                                       `kPreviewMode`. State loading per-tombol (`_enteringTestingMode`)
+                                       + snackbar error kalau sign-in gagal (mis. tidak ada internet)
       register_screen.dart          — REDESIGN (22 Agt) sesuai referensi HTML + role card "Saya
                                        Sumber"/"Saya Pengolah" (Pengolah non-fungsional, lihat Bag. 1)
+    pengolah/                       — BARU (25 Agt): UI role Pengolah, testing-only, lihat Bagian 4g
+      pengolah_shell_screen.dart    — shell mandiri (bottom nav 5 tab sendiri, BUKAN
+                                       StatefulShellRoute/BottomNavScaffold milik Sumber).
+                                       BERUBAH (26 Agt): `_keluar()` sekarang beneran signOut Firebase
+                                       kalau `!kPreviewMode` (dulu cuma reset sessionMode lokal)
+      pengolah_colors.dart          — aksen biru role Pengolah, terpisah dari AppColors (hijau Sumber)
+      data/pengolah_mock.dart       — data mock lokal (submission masuk, event komunitas) — TETAP
+                                       dipakai sebagai fallback offline kalau `kPreviewMode`
+      widgets/
+        pengolah_beranda_tab.dart   — BERUBAH (26 Agt): bell notifikasi (`_NotifBell`) + label
+                                       "Setoran Masuk · N baru" sekarang pakai count ASLI dari
+                                       `submissionFlowServiceProvider.watchIncomingQueue()` (bukan
+                                       `pengolahSubmissions.length` mock) kalau `!kPreviewMode`
+        pengolah_setoran_tab.dart   — BERUBAH TOTAL (26 Agt): kalau `!kPreviewMode`, tampilkan 2
+                                       `StreamBuilder` realtime — "Perlu Dikonfirmasi"
+                                       (`watchIncomingQueue()`) & "Sedang Diproses"
+                                       (`watchPengolahAktif(uid)`) — tap kartu push ke
+                                       `PengolahSubmissionDetailScreen(submissionId: ...)`. Kalau
+                                       `kPreviewMode`, fallback ke UI mock lama (`_OfflineSetoranList`,
+                                       class private baru di file yang sama, isinya persis widget
+                                       lama sebelum 26 Agt)
+        pengolah_submission_detail_screen.dart — DITULIS ULANG (26 Agt): dari terima `PengolahSubmission`
+                                       (mock, statis) jadi terima `submissionId` (String) + StreamBuilder
+                                       live ke `watchSubmission()`. Tombol aksi berubah total sesuai
+                                       `flowStatus` — Terima/Tolak (menungguKonfirmasi), Tandai Sudah
+                                       Diterima (dikonfirmasi), Setujui/Tidak Sesuai + form koreksi
+                                       berat & catatan (sedangDiverifikasi), read-only untuk sisanya.
+                                       Semua manggil method `submissionFlowServiceProvider`
+        pengolah_dashboard_tab.dart, pengolah_komunitas_tab.dart, pengolah_profil_tab.dart,
+        pengolah_create_post_screen.dart — TIDAK diubah sesi ini (26 Agt), tetap mock lokal
     map/peta_screen.dart            — peta interaktif, PolygonLayer garis merah batas Semarang
     wilayah/wilayah_pencocokan_screen.dart  — alternatif list (bukan peta) untuk pilih mitra
     sari_chat/sari_chat_screen.dart — layar chat penuh dengan Sari (pakai GroqService.chat)
-    notifications/notifications_screen.dart
+    notifications/notifications_screen.dart — BERUBAH (26 Agt): baca `notificationsListProvider`
+                                       (bukan `notificationsProvider` langsung), mark-all-read manggil
+                                       `markAllNotificationsRead(ref)` — otomatis pilih Firestore asli
+                                       atau seed lokal (lihat catatan notification_providers.dart)
     articles/article_detail_screen.dart
     profile/
       panduan_screen.dart           — accordion 7 bagian panduan lengkap
       profil_screen.dart            — tombol Keluar sekarang reset sessionMode ke normal juga
                                        (bukan cuma signOut Firebase), supaya tamu/akun testing bisa
-                                       "keluar" balik ke Login sungguhan
+                                       "keluar" balik ke Login sungguhan. BERUBAH (26 Agt): kondisi
+                                       signOut Firebase diperluas jadi `mode == normal || mode ==
+                                       demo` (dulu cuma `normal`) — Akun Testing Sumber sekarang
+                                       identitas Firebase nyata juga, butuh signOut sungguhan
     shared/widgets/
       bottom_nav_scaffold.dart      — FAB "Sari" mengambang di semua tab; tombol Setor Cerdas
                                        (nonaktif otomatis untuk tamu) sekarang buka
@@ -439,10 +581,410 @@ lain):
   minimal 5 sub-jenis masing-masing — datanya di `const _organikJenis`/
   `_anorganikJenis` di `setor_form_screen.dart`.
 
+## 4g. Akun Pengolah — jalur testing tanpa daftar (25 Agustus 2026)
+
+Permintaan asli user: role **Pengolah** (pengepul/bank sampah) belum ada
+sama sekali di app (lihat Bagian 5 versi lama). Diminta dibangun jalur cepat
+untuk testing/demo — **tanpa perlu daftar** — diakses dari tombol baru di
+Login, tampilannya niru bagian "ROLE: PENGOLAH" di file referensi
+`SisaPedia App.html` yang dikirim user (bukan `SisaPedia - Standalone
+Export.html` yang sudah dipakai untuk redesign Login/Daftar). **Instruksi
+eksplisit user: akun Sumber TIDAK BOLEH disentuh sama sekali** — jadi fitur
+ini dibangun sebagai modul yang sepenuhnya berdiri sendiri.
+
+**Cara masuk**: Login → tombol "Masuk sebagai Akun Pengolah (Testing)" (di
+bawah tombol "Masuk sebagai Akun Testing" yang sudah ada) → langsung ke UI
+Pengolah terisi data mock, tanpa Firebase, tanpa form daftar.
+
+**Isolasi dari Sumber** (supaya klaim "tidak menyentuh akun Sumber" valid):
+- `SessionMode` nambah 1 value baru: `pengolahDemo` (additive, tidak ada
+  switch-case lain di codebase yang exhaustive terhadap enum ini — dicek
+  dulu sebelum nambah, semua pemakaian lain pakai `==` bukan `switch`).
+- `lib/features/pengolah/` adalah modul baru total: shell bottom-nav
+  sendiri (`PengolahShellScreen`, `IndexedStack` 5 tab manual), palet warna
+  sendiri (`pengolah_colors.dart`, aksen biru `#3B82F6` sesuai referensi —
+  BUKAN nambah ke `AppColors` yang dipakai Sumber), data mock sendiri
+  (`data/pengolah_mock.dart`, in-memory, tidak lewat
+  `fake_repositories.dart`/`repository_providers.dart` milik Sumber).
+- Route `/pengolah` di `app_router.dart` berdiri sendiri
+  (`parentNavigatorKey: _rootNavigatorKey`, di luar `StatefulShellRoute`
+  Sumber). Redirect guard nambah satu baris: kalau `sessionMode ==
+  pengolahDemo` dan lagi di halaman auth, arahkan ke `/pengolah` (bukan
+  `/beranda`) — satu-satunya baris yang diubah di redirect logic lama.
+- Satu-satunya file Sumber yang disentuh: `login_screen.dart` (nambah 1
+  tombol baru di paling bawah, TIDAK mengubah tombol/logic yang sudah ada)
+  dan `session_mode.dart` (nambah 1 enum value, additive).
+
+**Isi UI Pengolah** (5 tab bottom nav, niru referensi HTML persis strukturnya
+— data dummy, semua tombol aksi cuma snackbar/navigasi lokal, TIDAK ada
+backend nyata sama sekali):
+1. **Beranda** — header biru gradasi, kartu sambutan nama akun ("Bank Sampah
+   Melati Bersih"), progress bar Kapasitas Gudang (72%) & Kandang Maggot BSF
+   (45%), "Menu Cepat" (Lihat Dashboard/Setoran Masuk/Komunitas — pindah tab
+   langsung), artikel horizontal scroll.
+2. **Dashboard** — badge kategori, 2 progress bar sama seperti Beranda,
+   grafik batang "Tren Setoran Mingguan" (organik vs anorganik, 7 hari, data
+   statis), kartu "Insight AI Sari" gradasi hijau berisi teks insight statis
+   (BUKAN panggilan Groq/Gemini asli — beda dari Insight AI Sumber yang
+   sudah pakai API sungguhan).
+3. **Setoran** — daftar "Perlu Dikonfirmasi" (2 item mock: Warung Bu Sri,
+   Budi Santoso) dengan tombol Lihat Informasi/Terima/Tolak. "Lihat
+   Informasi" push ke `PengolahSubmissionDetailScreen` (alamat, telepon,
+   rincian jenis+berat, tombol Terima/Tolak juga di situ). Terima/Tolak
+   cuma snackbar konfirmasi, tidak mengubah state list (tidak ada
+   penyimpanan/persist, sesuai semangat "testing-only").
+4. **Komunitas** — tombol "+ Buat Event / Postingan" push ke
+   `PengolahCreatePostScreen` (toggle Event/Postingan, field judul/deskripsi
+   + tanggal/lokasi khusus Event, tombol Publikasikan → snackbar lalu pop,
+   tidak benar-benar menambah ke list). List "Event Mendatang" (1 mock) +
+   kartu "Blog Edukasi" statis.
+5. **Profil** — kartu identitas akun, menu "Data Kapasitas"/"Riwayat
+   Transaksi"/"Pengaturan Akun" (snackbar "Segera hadir"), "Keluar" — reset
+   `sessionModeProvider` ke `normal` lalu `context.go('/login')` (pola sama
+   persis dengan tombol Keluar Sumber di `profil_screen.dart`, tapi
+   diimplementasikan ulang lokal di `pengolah_profil_tab.dart` supaya file
+   Sumber itu tidak perlu disentuh).
+
+**Belum/tidak dikerjakan (sesuai scope "testing-only" yang diminta)**:
+- Event/Komunitas/Dashboard Pengolah TETAP data mock lokal (tidak diubah di
+  sesi 26 Agustus juga) — mock reset tiap restart app.
+- ~~Tidak ada koneksi ke submission asli yang dibuat lewat Setor Manual/Setor
+  Cerdas Sumber — dua dunia data terpisah total untuk sesi ini.~~ **SUDAH
+  TERHUBUNG sejak 26 Agustus 2026** — lihat Bagian 4h, ini justru jadi fitur
+  utama sesi berikutnya.
+- Form Daftar Sumber masih menampilkan role card "Saya Pengolah" tapi tetap
+  non-fungsional ("Segera hadir") — TIDAK diubah untuk mengarah ke fitur
+  baru ini, sesuai instruksi "jangan edit akun sumber sama sekali".
+- Build APK release **56.5MB**, `flutter analyze` 0 issues (lihat Bagian 2).
+  (Build ini sudah ditimpa oleh build 26 Agustus, lihat Bagian 4h.)
+
+## 4h. Pertukaran setor real-time Sumber<->Pengolah, 2 akun testing jadi identitas Firebase nyata (26 Agustus 2026)
+
+Permintaan asli user: pakai app di **2 HP fisik** — satu login Akun Testing
+(Sumber), satu login Akun Pengolah (Testing) — dan keduanya **saling
+terhubung**: Sumber setor sampah, Pengolah lihat masuk & konfirmasi, kalau
+setuju baru progress jalan sesuai mode pengiriman (COD/antar
+langsung/dijemput) dengan kontak Pengolah ditampilkan ke Sumber, sampai
+akhirnya Pengolah verifikasi kesesuaian dan **poin baru ditambahkan saat
+itu** (bukan langsung saat submit) + muncul QR "berhasil setor". Kalau
+Pengolah menemukan ketidaksesuaian, Sumber dapat 3 pilihan: terima koreksi
+(negosiasi poin), ambil sampah kembali (batal, 0 poin), atau biarkan di
+Pengolah (poin minimal). **Instruksi eksplisit user: tetap tanpa form
+daftar** — tinggal tap tombol testing yang sudah ada di Login.
+
+**Prasyarat yang diselesaikan bareng user sebelum coding**: project
+Firebase `sisapedia` dibuat via `console.firebase.google.com`, `firebase-tools`
+& `flutterfire_cli` diinstall, `flutterfire configure --project=sisapedia
+--platforms=android,ios --overwrite-firebase-options --yes` dijalankan user
+sendiri di terminal → `lib/firebase_options.dart` sekarang berisi config
+ASLI (App Id android `1:645788352305:android:...`, projectId `sisapedia`).
+User juga sudah aktifkan **Authentication (Email/Password)** dan **Firestore
+Database** (mode test) di Console.
+
+**Kunci arsitektur — kenapa 2 device bisa saling lihat**: sebelum sesi ini,
+tombol "Akun Testing"/"Akun Pengolah (Testing)" di Login cuma set
+`sessionModeProvider` lokal + swap ke `Fake*Repository` in-memory —
+masing-masing device punya dunia data sendiri-sendiri, sama sekali tidak
+terhubung. Sekarang (`lib/core/session/testing_accounts.dart`):
+- Tiap tombol testing punya **email/password TETAP** yang di-hardcode di
+  app (`kTestingSumberAccount`, `kTestingPengolahAccount`).
+- `signInTestingAccount()`: coba `createUserWithEmailAndPassword` dulu
+  (device PERTAMA yang tap → akun ke-create) → kalau errornya
+  `email-already-in-use` (device manapun setelahnya), fallback ke
+  `signInWithEmailAndPassword` — race antara 2 device tap bersamaan aman
+  karena Firebase yang jamin cuma 1 create yang menang.
+- Hasilnya: SEMUA device yang tap "Akun Testing Sumber" login ke UID
+  Firebase Auth yang PERSIS SAMA. Begitu juga Pengolah. Firestore jadi
+  medium sinkron real-time antara 2 device itu — bukan lewat mekanisme
+  custom apa pun, murni manfaatin `snapshots()` stream Firestore yang
+  memang sudah live secara default.
+- `lib/core/providers/repository_providers.dart`: `authRepositoryProvider`/
+  `submissionRepositoryProvider`/`pointsRepositoryProvider` diubah dari
+  gating `sessionMode == demo` jadi gating `kPreviewMode` doang — jadi Akun
+  Testing (bukan cuma akun normal) sekarang beneran pakai
+  `SubmissionRepository`/`AuthRepository` Firestore asli, KECUALI build
+  dengan `--dart-define=PREVIEW_MODE=true` (tetap 100% offline/Fake seperti
+  dulu, untuk yang mau lihat UI tanpa Firebase).
+- `main.dart`: karena Firebase Auth persist login lintas restart by design
+  (beda dari `sessionModeProvider` yang selalu reset ke `normal` tiap buka
+  app), ditambah pengecekan: kalau user yang keinget itu salah satu email
+  akun testing → force `signOut()` di awal `main()`, biar akun testing
+  tetap terasa "reset tiap restart" seperti sebelumnya, sementara akun
+  normal (register asli) tetap persist login seperti mestinya.
+
+**State machine pertukaran** (`SubmissionFlowStatus` di
+`data/models/submission_model.dart`, dieksekusi oleh
+`SubmissionFlowService` di `core/services/submission_flow_service.dart`):
+
+```
+menungguKonfirmasi ──Pengolah Terima──> dikonfirmasi ──Pengolah "Tandai
+  │                                          │            Sudah Diterima"──┐
+  └──Pengolah Tolak──> ditolakPengolah        ▼                            ▼
+                                     (kontak Pengolah tampil    diterimaPengolah
+                                      ke Sumber, instruksi                │
+                                      beda tergantung                    ▼ (otomatis)
+                                      DeliveryMode)              sedangDiverifikasi
+                                                                          │
+                                                        ┌─────────Sesuai──┴──Tidak Sesuai──┐
+                                                        ▼                                  ▼
+                                                    disetujui                    perluKeputusanSumber
+                                              (poin penuh + QR)                            │
+                                                                     ┌──────────┬───────────┤
+                                                                     ▼          ▼           ▼
+                                                          selesaiNegosiasi  ambilKembali  selesaiPoinMinimal
+                                                          (poin sesuai      (dibatalkan-   (poin kecil,
+                                                           koreksi + QR)     DiambilKembali,  masih dapat QR)
+                                                                             0 poin, no QR)
+```
+
+- Poin ASLI baru ditambahkan (transaksi Firestore, `users/{uid}.poin_sirkular`
+  via `FieldValue.increment`) di 3 titik: `disetujui`, `selesaiNegosiasi`,
+  `selesaiPoinMinimal` — formula tetap `estimatedPoinFromKg()` yang sudah
+  ada (`level_utils.dart`), kecuali poin minimal yang dikali 0.2 (floor 5,
+  konstanta di `SubmissionFlowService`, gampang diubah kalau formula final
+  beda nanti — sama semangat "estimasi sementara" seperti poin lain).
+- QR (`qr_flutter`, `QrImageView`) isinya cuma string penanda
+  `sisapedia-setor:{submissionId}` — ditampilkan sebagai BUKTI/RESI di
+  layar Sumber, **BUKAN untuk di-scan pihak lain** (beda dari rencana awal
+  user yang sempat menyebut "pengolah kasih QR, sumber scan" — setelah
+  didetailkan lagi sama user, alurnya jadi verifikasi Pengolah dilakukan
+  duluan lewat tombol Setujui/Tidak Sesuai, QR-nya cuma resi akhir). Jadi
+  TIDAK ada fitur scan kamera QR di app ini.
+- Kontak yang ditampilkan ke Sumber (nomor telepon Pengolah) di layar
+  progress itu **untuk dihubungi manual** (telepon/WA sendiri di luar app)
+  — sengaja tidak pasang `url_launcher`/auto-dial, sesuai permintaan user
+  "nanti tinggal dihubungin secara manual".
+- Notifikasi Sumber: koleksi Firestore `notifications` (uid, title, body,
+  type, submission_id, read, created_at), ditulis `SubmissionFlowService`
+  di TIAP transisi state. Notifikasi Pengolah: TIDAK pakai koleksi
+  terpisah — cukup badge count live dari `watchIncomingQueue().length` di
+  bell icon Beranda Pengolah (app ini memang belum ada push notification
+  sama sekali, jadi "notifikasi" di sini semuanya cuma live-badge/live-list
+  dalam app, bukan push OS).
+
+**Composite index Firestore — dihindari, bukan di-setup**: beberapa query
+lama (`watchUserSubmissions`, `watchUserTransactions`) dan yang baru
+(`watchIncomingQueue`, `watchPengolahAktif`) awalnya kombinasi
+`.where().orderBy()`/`.where().where()` yang butuh composite index manual
+di Console (baru bisa dibuat lewat link error runtime, bukan sesuatu yang
+bisa disiapkan di awal tanpa tau project id). Diputuskan SEMUA query itu
+disederhanakan jadi single `.where()` + sort/filter di client — untuk
+skala testing (1-2 akun, puluhan submission) ini tidak masalah performa,
+dan project Firebase-nya jalan tanpa perlu klik "create index" manual sama
+sekali. Kalau nanti datanya besar/production sungguhan, ini kandidat
+pertama yang perlu index asli + query balik ke server-side.
+
+**Yang SENGAJA tidak dikerjakan (di luar scope yang diminta)**:
+- Foto bukti setor TETAP placeholder fake untuk akun testing (Firebase
+  Storage belum di-setup user — beda service dari Firestore/Auth yang
+  sudah). Kalau nanti Storage disiapkan, tinggal ubah kondisi `useFake` di
+  `setor_form_screen.dart`/`foto_konfirmasi_screen.dart` dari
+  `kPreviewMode || sessionMode == demo` jadi `kPreviewMode` saja.
+  `koreksiKategori`/`Subtipe` (field di submission untuk koreksi Pengolah)
+  ditulis servicenya tapi UI dispute form di
+  `pengolah_submission_detail_screen.dart` baru expose input **berat**
+  (paling sering jadi sumber ketidaksesuaian) — field jenis/kategori sudah
+  ada di model & service kalau nanti mau ditambah inputnya juga.
+- Firestore Security Rules MASIH mode test (izin baca/tulis terbuka,
+  expire otomatis ~30 hari sejak dibuat via Console) — cukup untuk
+  testing/demo, TAPI kalau project ini mau dipakai lebih dari sebulan atau
+  disebar ke orang lain, WAJIB pasang rules asli (minimal: cuma
+  `request.auth.uid` yang match boleh tulis submission miliknya, poin
+  cuma bisa nambah lewat service tepercaya). Belum dikerjakan sesi ini —
+  di luar scope, tapi risiko keamanan nyata kalau dibiarkan lewat dari
+  masa berlaku test mode.
+- Build APK release **57.7MB** (mode NORMAL, bukan PREVIEW_MODE — lihat
+  Bagian 2 untuk kenapa mode ini yang wajib dipakai untuk fitur ini),
+  `flutter analyze` 0 issues (cuma 2 info style `use_null_aware_elements`
+  di `submission_flow_service.dart`, aman diabaikan).
+
+## 4i. Bug fix: router reset ke Beranda Sumber pas masuk Akun Pengolah (26 Agustus 2026, setelah user tes di HP)
+
+User laporkan (dengan screenshot): setelah setup Firebase beres (Bagian 4h)
+dan tap "Masuk sebagai Akun Pengolah (Testing)", app malah balik nampilin
+Beranda **Sumber** (bisa Setor Organik/Anorganik segala), bukan shell
+Pengolah yang biru. Sempat curiga fitur Pengolah-nya nggak beneran dibuat —
+ternyata bug arsitektur router, bukan UI Pengolah yang salah (UI-nya sendiri
+sudah benar, cuma nggak pernah kelihatan lama).
+
+**Root cause** (`lib/core/router/app_router.dart` + `lib/app.dart`):
+`routerProvider` awalnya nge-`ref.watch(currentUidProvider)` dan
+`ref.watch(sessionModeProvider)` LANGSUNG di badan provider-nya. Di Riverpod,
+itu artinya tiap kali salah satu state itu berubah (misalnya pas
+`sessionModeProvider` di-set ke `pengolahDemo`), Riverpod recompute seluruh
+`routerProvider` dan bikinkan **objek `GoRouter` yang benar-benar baru** —
+dan `MaterialApp.router` (`app.dart`) langsung pasang router baru itu.
+Router baru SELALU mulai dari `initialLocation: '/splash'`, membuang semua
+riwayat navigasi. Lalu `SplashScreen` (`lib/features/splash/splash_screen.dart`)
+punya `Timer` yang HARDCODE `context.go('/beranda')` sesudah 1.4 detik, tanpa
+tau sama sekali soal mode `pengolahDemo`. Urutannya jadi: tap tombol Pengolah
+→ sessionMode berubah → GoRouter DIGANTI BARU → balik ke `/splash` → 1.4
+detik kemudian Splash paksa ke `/beranda` → nyasar ke Beranda Sumber.
+
+Ini sebenarnya bug LAMA yang sudah ada sejak `sessionModeProvider`
+diperkenalkan (22 Agustus, Bagian 4b) — tapi nggak pernah ketahuan karena
+tombol "Tamu"/"Akun Testing" (Sumber) TUJUANNYA juga `/beranda`, jadi
+kebetulan tetap kelihatan benar meski lewat jalur yang salah. Baru
+ketahuan sekarang karena Pengolah adalah alur PERTAMA yang tujuannya beda
+(`/pengolah`).
+
+**Fix** (2 bagian, saling melengkapi):
+1. `app_router.dart`: `routerProvider` sekarang cuma bikin `GoRouter` **satu
+   kali** (tidak lagi `ref.watch` auth/session di badan provider). State
+   terbaru dibaca via `ref.read()` di dalam closure `redirect` (yang memang
+   dipanggil ulang tiap navigasi oleh go_router sendiri). Supaya go_router
+   tau kapan harus re-run `redirect()` tanpa bikin ulang seluruh router,
+   dipasang `refreshListenable` baru: `_RouterRefreshNotifier`
+   (`ChangeNotifier` yang `ref.listen` ke `currentUidProvider`/
+   `sessionModeProvider` dan manggil `notifyListeners()`). ini pola standar
+   go_router+Riverpod yang benar — GoRouter jadi objek stabil sepanjang
+   umur app, redirect logic tetap reaktif tanpa reset navigasi.
+2. `splash_screen.dart`: diubah dari `StatefulWidget` jadi
+   `ConsumerStatefulWidget`, `Timer`-nya sekarang baca
+   `ref.read(sessionModeProvider)` dan pilih `/pengolah` atau `/beranda`
+   sesuai mode — bukan hardcode `/beranda` lagi. (Fix #1 saja sebenarnya
+   sudah cukup mencegah bug ini karena `/splash` jadi cuma kelewatan
+   sekali di awal app dibuka, tapi fix #2 dipasang juga sebagai lapis
+   jaga-jaga untuk skenario cold-start.)
+
+Build APK ulang setelah fix ini — **cek versi/waktu build sebelum
+percaya hasil tes**, lihat Bagian 2 untuk command build terbaru.
+
+## 4j. Box "Lihat Status Setoran Sampah" di Beranda Sumber (26 Agustus 2026)
+
+Permintaan user setelah lihat alur progress (Bagian 4h) jalan: dari Beranda
+Sumber, di bawah kartu "Wilayah Pencocokan" ditambah 1 kartu baru "Lihat
+Status Setoran Sampah" — tempat lihat semua setoran (bukan cuma yang baru
+saja disubmit) beserta progress-nya masing-masing sampai tahap apa, dan
+kalau belum pernah setor sama sekali harus jelas kelihatan kosong (bukan
+layar kosong yang bikin bingung).
+
+- `lib/features/home/widgets/setor_actions_section.dart`: `SetorActionsSection`
+  nambah parameter wajib baru `onLihatStatusSetoran` + widget
+  `_StatusSetoranCard` (gaya sama seperti kartu Wilayah Pencocokan yang
+  sudah ada, warna baru `AppColors.statusSetoran`/`statusSetoranSoft` —
+  indigo, biar beda dari hijau/biru/oranye yang sudah dipakai).
+- `lib/features/home/beranda_screen.dart`: teruskan callback ke
+  `context.push('/setor/status')`.
+- BARU: `lib/features/setor_manual/setoran_status_list_screen.dart` —
+  `SetoranStatusListScreen`, `StreamBuilder` ke
+  `submissionRepositoryProvider.watchUserSubmissions(uid)` (bukan provider
+  baru, reuse yang sudah ada). Tiap item nampilin kategori/subtipe/berat +
+  chip `flowStatus.label` berwarna (hijau kalau `isSuccessOutcome`, merah
+  kalau `isFailureOutcome`, indigo untuk yang masih berjalan) + tanggal.
+  Tap item → `context.push('/setor/sukses', extra: submission)` (reuse
+  `SetorProgressScreen` yang sama persis dengan yang muncul pas submit,
+  lihat Bagian 4h — bukan layar baru).
+- Kalau `items.isEmpty` → `_EmptyState`: "Status Setoran: Kosong" + "Belum
+  ada aktivitas setor sampah. Yuk mulai setor dari Beranda." (persis sesuai
+  yang diminta user, bukan generic "no data").
+- Route BARU `/setor/status` di `app_router.dart` — dideklarasikan SEBELUM
+  `/setor/:kategori` (pola sama seperti `/setor/sukses`/`/setor/foto-konfirmasi`,
+  lihat catatan bug 24 Agustus tentang urutan route literal vs wildcard).
+
+## 4k. Revisi setelah user coba di HP (26 Agustus 2026): stat Pengolah generik, artikel bisa dibuka, timeline diperbaiki, alur "tidak sesuai" disederhanakan
+
+Empat revisi terpisah dari user setelah lihat build sebelumnya jalan:
+
+**1. Kartu "Kandang Maggot BSF" diganti — tidak generik untuk semua Pengolah.**
+User benar: nggak semua Pengolah punya unit maggot BSF (bank sampah biasa,
+pengepul, dsb juga pakai role Pengolah yang sama). Diganti jadi
+**"Menunggu Verifikasi"** — angka LIVE (bukan skala %) dari Firestore, hitung
+submission milik Pengolah ini yang `flowStatus`-nya `diterimaPengolah` atau
+`sedangDiverifikasi`. Berlaku di 2 tempat sekaligus (Beranda & Dashboard
+Pengolah, keduanya sebelumnya duplikat kartu yang sama):
+- BARU: `lib/features/pengolah/pengolah_providers.dart` —
+  `pengolahIncomingQueueCountProvider` (dipindah dari private provider lama
+  di `pengolah_beranda_tab.dart`) + `pengolahMenungguVerifikasiCountProvider`
+  (BARU), dipakai bareng oleh Beranda & Dashboard supaya query Firestore-nya
+  tidak duplikat.
+- `pengolah_beranda_tab.dart`: `_CapacityRow` jadi `ConsumerWidget`, kartu
+  kedua ganti jadi `_CountCard` (angka besar, bukan progress bar).
+- `pengolah_dashboard_tab.dart`: sama, `_MiniStat` kedua diganti `_CountStat`.
+  Badge chip judul juga diganti dari "Bank Sampah & Maggot BSF" jadi
+  **"Mitra Pengolah Sampah"** (generik, akar masalah yang sama).
+- Kartu pertama ("Kapasitas Gudang") TIDAK diubah — user cuma keberatan
+  soal yang maggot-spesifik.
+
+**2. Artikel "Seputar Pengolah" sekarang bisa dibuka.**
+Sebelumnya 3 kartu artikel di Beranda Pengolah cuma dekorasi (tidak ada
+`onTap` sama sekali) — bug murni, bukan desain sengaja.
+- BARU: `lib/features/pengolah/data/pengolah_articles.dart` —
+  `PengolahArticle` (title/readTime/paragraphs) + 3 artikel lengkap
+  isinya sesuai judul yang sudah ada persis ("Smart Bin: Sensor Kapasitas
+  Gudang Otomatis", "Optimalkan Kandang Maggot BSF dengan IoT" — ini cuma
+  ARTIKEL EDUKASI opsional, bukan klaim akun ini punya unit maggot, jadi
+  tetap dipertahankan sebagai salah satu topik, "5 Strategi Bank Sampah
+  Naikkan Setoran").
+- BARU: `lib/features/pengolah/widgets/pengolah_article_detail_screen.dart`
+  — layar baca sederhana (judul + meta + paragraf).
+- `pengolah_beranda_tab.dart`: `_ArticleCard` sekarang terima `onTap`,
+  dibungkus `InkWell`, push ke detail screen dengan artikel yang sesuai.
+
+**3. Label tahapan Progress Setoran diperbaiki.**
+Bug murni: label di `_StageTimeline` (`setor_progress_screen.dart`) sebelumnya
+hasil `_stages[i].label.split(' ').first` — cuma ambil KATA PERTAMA dari
+label lengkap `SubmissionFlowStatus`, jadi kelihatan ngaco ("Menunggu",
+"Disetujui", "Sampah", "Sedang" — padahal maksudnya beda tahap). Diperbaiki
+sesuai yang diminta user: **Menunggu → Disetujui → Diverifikasi → Selesai**,
+4 label tetap (`_stageLabels`, bukan potongan dari label lain) + fungsi
+`_stageIndexFor()` yang eksplisit map tiap `SubmissionFlowStatus` ke salah
+satu dari 4 tahap itu. Timeline sekarang SELALU tampil (dulu disembunyikan
+total begitu status terminal) — tahap ke-4 "Selesai" ikut nyala/dicentang,
+warnanya beda kalau outcome-nya gagal (merah) vs poin minimal (oranye) vs
+sukses penuh (hijau), lihat `_StageTimeline`.
+
+**4. Alur "Tidak Sesuai" disederhanakan — dikonfirmasi lewat AskUserQuestion.**
+Spesifikasi ASLI (Bagian 4h) kasih Sumber 3 pilihan begitu Pengolah bilang
+"Tidak Sesuai": terima koreksi/ambil kembali/biarkan poin minimal. Setelah
+user coba alurnya, mereka minta simplifikasi jadi cuma **2 output**: (1)
+Pengolah setuju → poin penuh + QR "berhasil disetor", (2) Pengolah bilang
+tidak sesuai → **otomatis** "setor tidak berhasil" tapi Sumber tetap dapat
+poin sedikit (karena sampah sudah fisik berpindah tangan) — TANPA Sumber
+perlu pilih apa-apa lagi. Karena ini mengubah balik sebagian dari apa yang
+diminta di pesan sebelumnya, saya konfirmasi dulu lewat AskUserQuestion —
+user pilih opsi simple (otomatis), bukan tetap pertahankan 3 pilihan.
+
+Perubahan kode (penyederhanaan besar, banyak yang dihapus bersih — bukan
+dibiarkan jadi dead code):
+- `SubmissionFlowStatus` (`submission_model.dart`): `perluKeputusanSumber`,
+  `selesaiNegosiasi`, `dibatalkanDiambilKembali` DIHAPUS dari enum (bukan
+  cuma berhenti dipakai). Yang tersisa: `menungguKonfirmasi → dikonfirmasi →
+  diterimaPengolah → sedangDiverifikasi → {disetujui | selesaiPoinMinimal |
+  ditolakPengolah}`. Getter baru `isPartialOutcome` (khusus
+  `selesaiPoinMinimal`) dipisah dari `isSuccessOutcome` (sekarang cuma
+  `disetujui`) — supaya UI bisa bedakan "sukses penuh+QR" vs "tidak
+  berhasil tapi tetap dapat sedikit poin, TANPA QR".
+- `NegosiasiKeputusan` enum DIHAPUS total. Field `koreksiKategori`/
+  `koreksiSubtipe`/`koreksiBeratKg` DIHAPUS dari `SubmissionModel` (tidak
+  ada lagi yang butuh "angka koreksi" karena tidak ada negosiasi) —
+  `catatanVerifikasi` (alasan Pengolah) tetap ada, masih dipakai.
+- `SubmissionFlowService`: `disputeVerifikasi()` + `resolveNegosiasi()`
+  (2 method) DIGABUNG jadi 1 method baru **`rejectVerifikasi({submissionId,
+  catatan})`** — transaksi Firestore langsung set `selesaiPoinMinimal` +
+  kredit poin minimal (formula sama seperti sebelumnya: `estimatedPoinFromKg()
+  * 0.2`, floor 5), tanpa tahap `perluKeputusanSumber` di tengah.
+- `pengolah_submission_detail_screen.dart`: form "Tidak Sesuai" Pengolah
+  disederhanakan — cuma field catatan (field "Berat menurutmu" dihapus,
+  karena tidak ada lagi yang menghitung ulang poin dari angka koreksi).
+- `setor_progress_screen.dart`: `_NegosiasiCard` (widget 3-tombol) DIHAPUS
+  total, diganti `_PartialCard` (baru) — tampilan read-only "Setor Tidak
+  Berhasil" + alasan Pengolah + poin minimal yang sudah masuk, TANPA QR
+  (beda dari `_SuccessCard` yang tetap pakai QR).
+- QR payload (`submission_flow_service.dart`) diganti jadi
+  `SISAPEDIA-BERHASIL-DISETOR:{id}` (dari `sisapedia-setor:{id}`) — biar
+  isi QR-nya eksplisit "berhasil disetor" sesuai yang diminta user, cuma
+  dipakai untuk outcome `disetujui` (bukan `selesaiPoinMinimal`).
+
+Build APK ulang setelah semua revisi ini — cek Bagian 2 untuk command
+build terbaru, jangan percaya hasil tes dari APK versi sebelum tanggal ini.
+
 ## 5. Yang BELUM dikerjakan / diketahui terbatas
 
-- Role **Pengolah** dan **DLH-Admin** belum ada sama sekali (README asli
-  sudah menyebut ini dari awal, bukan regresi sesi ini).
+- Role **Pengolah** sekarang punya UI testing-only (lihat Bagian 4g) — akun
+  demo lokal, data mock, TIDAK ada backend/Firestore/auth nyata untuk role
+  ini. Role **DLH-Admin** masih belum ada sama sekali (README asli sudah
+  menyebut ini dari awal, bukan regresi sesi ini).
 - Form "Gabung Event" baru mengirim ke `joinEvent()` yang sama seperti
   sebelumnya (menandai partisipasi), belum benar-benar mengalirkan data
   Nama/Kontak/Motivasi ke sisi akun Pengolah — itu memang ditunda sesuai
@@ -500,9 +1042,17 @@ lain):
 
 Sama seperti di `README.md`, dua hal ini butuh akun pribadi:
 
-1. **Firebase** — `flutterfire configure`, aktifkan Authentication
-   (Email/Password) + Firestore. Cuma perlu kalau mau jalan di mode
-   normal (non-preview).
+1. ~~**Firebase** — `flutterfire configure`, aktifkan Authentication
+   (Email/Password) + Firestore.~~ **SUDAH BERES per 26 Agustus 2026** —
+   project `sisapedia` sudah dikonfigurasi user sendiri lewat
+   `firebase-tools`/`flutterfire_cli` (login akun Google user),
+   `firebase_options.dart` sudah berisi config asli, Authentication +
+   Firestore sudah aktif. Kalau
+   pindah/clone repo baru dan mau pakai project Firebase LAIN, jalankan
+   ulang `flutterfire configure --project=<id-baru> --platforms=android,ios
+   --overwrite-firebase-options --yes` (lihat Bagian 4h untuk kronologi
+   lengkap perintahnya). Firestore Security Rules MASIH mode test
+   (expire ~30 hari dari saat dibuat) — lihat catatan keamanan di Bagian 4h.
 2. **Groq API key** — daftar di console.groq.com, isi `.env` dari
    `.env.example`. Tanpa ini pun app tetap jalan (baik mode preview maupun
    normal), Insight AI dan Sari Chat cuma fallback ke pesan/jawaban mock.

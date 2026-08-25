@@ -2,7 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/submission_model.dart';
 
 abstract class SubmissionRepositoryBase {
-  Future<void> create(SubmissionModel submission);
+  /// Returns the created submission's id, so callers can navigate to a
+  /// realtime tracker for it right away.
+  Future<String> create(SubmissionModel submission);
+
+  /// Realtime single-submission stream, used by the progress tracker screen.
+  Stream<SubmissionModel?> watchSubmission(String id);
 
   Stream<List<SubmissionModel>> watchUserSubmissions(String uid, {int limit = 20});
 
@@ -21,21 +26,32 @@ class SubmissionRepository implements SubmissionRepositoryBase {
       _firestore.collection('submissions');
 
   @override
-  Future<void> create(SubmissionModel submission) {
-    return _ref.add(submission.toMap());
+  Future<String> create(SubmissionModel submission) async {
+    final doc = await _ref.add(submission.toMap());
+    return doc.id;
+  }
+
+  @override
+  Stream<SubmissionModel?> watchSubmission(String id) {
+    return _ref.doc(id).snapshots().map(
+        (doc) => doc.exists ? SubmissionModel.fromMap(doc.id, doc.data()!) : null);
   }
 
   @override
   Stream<List<SubmissionModel>> watchUserSubmissions(String uid,
       {int limit = 20}) {
-    return _ref
-        .where('uid', isEqualTo: uid)
-        .orderBy('created_at', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => SubmissionModel.fromMap(d.id, d.data()))
-            .toList());
+    // Single `where` + client-side sort/limit (not `.orderBy()` +
+    // `.limit()` server-side) — combining an equality filter with
+    // `orderBy` on a different field needs a composite Firestore index
+    // that doesn't exist on a fresh project until manually created.
+    return _ref.where('uid', isEqualTo: uid).snapshots().map((snap) {
+      final items = snap.docs
+          .map((d) => SubmissionModel.fromMap(d.id, d.data()))
+          .toList()
+        ..sort((a, b) =>
+            (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      return items.take(limit).toList();
+    });
   }
 
   @override

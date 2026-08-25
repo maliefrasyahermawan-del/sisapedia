@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/preview/preview_mode.dart';
 import '../../core/session/session_mode.dart';
+import '../../core/session/testing_accounts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/firebase_error_mapper.dart';
@@ -42,9 +44,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _enterAs(SessionMode mode) {
+  SessionMode? _enteringTestingMode;
+
+  Future<void> _enterAs(SessionMode mode) async {
+    final isTestingAccount =
+        mode == SessionMode.demo || mode == SessionMode.pengolahDemo;
+    // A real PREVIEW_MODE build never calls Firebase.initializeApp, so the
+    // testing accounts stay fully local/offline there — signing in for real
+    // only happens on a normal build, where the two testing buttons now
+    // share one real Firebase identity across devices (see
+    // testing_accounts.dart).
+    if (isTestingAccount && !kPreviewMode) {
+      setState(() => _enteringTestingMode = mode);
+      try {
+        await signInTestingAccount(
+          mode == SessionMode.demo
+              ? kTestingSumberAccount
+              : kTestingPengolahAccount,
+        );
+      } catch (e) {
+        if (mounted) {
+          setState(() => _enteringTestingMode = null);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal masuk akun testing: ${mapAuthError(e)}')),
+          );
+        }
+        return;
+      }
+    }
     ref.read(sessionModeProvider.notifier).state = mode;
-    context.go('/beranda');
+    if (mounted) {
+      setState(() => _enteringTestingMode = null);
+      context.go(mode == SessionMode.pengolahDemo ? '/pengolah' : '/beranda');
+    }
   }
 
   @override
@@ -169,12 +201,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       SizedBox(
                         height: 48,
                         child: OutlinedButton.icon(
-                          onPressed: () => _enterAs(SessionMode.demo),
-                          icon: const Icon(Icons.science_outlined, size: 18),
+                          onPressed: _enteringTestingMode != null
+                              ? null
+                              : () => _enterAs(SessionMode.demo),
+                          icon: _enteringTestingMode == SessionMode.demo
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : const Icon(Icons.science_outlined, size: 18),
                           label: const Text('Masuk sebagai Akun Testing'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.accent700,
                             side: const BorderSide(color: AppColors.accent700),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 48,
+                        child: OutlinedButton.icon(
+                          onPressed: _enteringTestingMode != null
+                              ? null
+                              : () => _enterAs(SessionMode.pengolahDemo),
+                          icon: _enteringTestingMode == SessionMode.pengolahDemo
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : const Icon(Icons.recycling_outlined, size: 18),
+                          label: const Text('Masuk sebagai Akun Pengolah (Testing)'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF1D4ED8),
+                            side: const BorderSide(color: Color(0xFF1D4ED8)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(999),
                             ),

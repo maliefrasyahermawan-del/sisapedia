@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "645788352305",
+    "project_id": "sisapedia",
+    "storage_bucket": "sisapedia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:645788352305:android:73e0c936795b0aed92fa10",
+        "android_client_info": {
+          "package_name": "com.sisapedia.sisapedia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8WKQahXyk9DUAFFjSRV_cXlxy9mS-gFw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

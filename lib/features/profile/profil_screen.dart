@@ -41,7 +41,10 @@ class ProfilScreen extends ConsumerWidget {
     );
     if (confirmed == true) {
       final mode = ref.read(sessionModeProvider);
-      if (mode == SessionMode.normal) {
+      // `demo` (Akun Testing) is a real signed-in Firebase identity now
+      // (see testing_accounts.dart), not just local state, so it needs a
+      // real sign-out too — same as `normal`.
+      if (mode == SessionMode.normal || mode == SessionMode.demo) {
         await ref.read(authControllerProvider.notifier).signOut();
       }
       ref.read(sessionModeProvider.notifier).state = SessionMode.normal;

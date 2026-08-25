@@ -9,11 +9,13 @@ class SetorActionsSection extends StatelessWidget {
     required this.onSetorOrganik,
     required this.onSetorAnorganik,
     required this.onWilayahPencocokan,
+    required this.onLihatStatusSetoran,
   });
 
   final VoidCallback onSetorOrganik;
   final VoidCallback onSetorAnorganik;
   final VoidCallback onWilayahPencocokan;
+  final VoidCallback onLihatStatusSetoran;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +49,54 @@ class SetorActionsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _WilayahCard(onTap: onWilayahPencocokan),
+        const SizedBox(height: 12),
+        _StatusSetoranCard(onTap: onLihatStatusSetoran),
       ],
+    );
+  }
+}
+
+class _StatusSetoranCard extends StatelessWidget {
+  const _StatusSetoranCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.statusSetoranSoft,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.pending_actions_rounded,
+                color: AppColors.statusSetoran),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Lihat Status Setoran Sampah',
+                      style: AppTextStyles.h3
+                          .copyWith(color: AppColors.statusSetoran)),
+                  const SizedBox(height: 2),
+                  Text('Pantau progress setoran sampai selesai',
+                      style: AppTextStyles.captionMuted.copyWith(
+                          color:
+                              AppColors.statusSetoran.withValues(alpha: 0.75))),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded,
+                color: AppColors.statusSetoran.withValues(alpha: 0.8)),
+          ],
+        ),
+      ),
     );
   }
 }

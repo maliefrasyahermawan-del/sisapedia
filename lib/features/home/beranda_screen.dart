@@ -176,6 +176,8 @@ class BerandaScreen extends ConsumerWidget {
                     onSetorAnorganik: () => context.push('/setor/anorganik'),
                     onWilayahPencocokan: () =>
                         context.push('/wilayah-pencocokan'),
+                    onLihatStatusSetoran: () =>
+                        context.push('/setor/status'),
                   ),
                   const SizedBox(height: 24),
                   RedeemArticleSection(

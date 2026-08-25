@@ -106,9 +106,11 @@ class _FotoKonfirmasiScreenState extends ConsumerState<FotoKonfirmasiScreen> {
         useFake: isDemo,
       );
 
+      final namaSumber = ref.read(userProfileProvider).valueOrNull?.name;
       final submission = SubmissionModel(
         id: '',
         uid: widget.uid,
+        namaSumber: namaSumber,
         kategori: _kategori,
         subtipe: _subJenisController.text.trim(),
         beratKg: double.parse(_beratController.text.replaceAll(',', '.')),
@@ -122,9 +124,10 @@ class _FotoKonfirmasiScreenState extends ConsumerState<FotoKonfirmasiScreen> {
             : _catatanController.text.trim(),
         deliveryMode: _deliveryMode,
       );
-      await ref.read(submissionRepositoryProvider).create(submission);
+      final id = await ref.read(submissionRepositoryProvider).create(submission);
       if (mounted) {
-        context.pushReplacement('/setor/sukses', extra: submission);
+        context.pushReplacement('/setor/sukses',
+            extra: submission.copyWith(id: id));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

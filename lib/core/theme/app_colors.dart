@@ -33,4 +33,7 @@ class AppColors {
   static const Color anorganikSoft = Color(0xFFDCE8FD);
   static const Color wilayah = Color(0xFFC2691D);
   static const Color wilayahSoft = Color(0xFFFBE9D2);
+
+  static const Color statusSetoran = Color(0xFF6366F1);
+  static const Color statusSetoranSoft = Color(0xFFE5E4FC);
 }

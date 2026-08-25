@@ -369,11 +369,12 @@ class FakeSubmissionRepository implements SubmissionRepositoryBase {
   final List<SubmissionModel> _items = List.of(_sampleSubmissions);
 
   @override
-  Future<void> create(SubmissionModel submission) async {
+  Future<String> create(SubmissionModel submission) async {
+    final id = 'local-${_items.length}';
     _items.insert(
       0,
       SubmissionModel(
-        id: 'local-${_items.length}',
+        id: id,
         uid: submission.uid,
         kategori: submission.kategori,
         subtipe: submission.subtipe,
@@ -391,6 +392,12 @@ class FakeSubmissionRepository implements SubmissionRepositoryBase {
         deliveryMode: submission.deliveryMode,
       ),
     );
+    return id;
+  }
+
+  @override
+  Stream<SubmissionModel?> watchSubmission(String id) {
+    return Stream.value(_items.where((s) => s.id == id).firstOrNull);
   }
 
   @override

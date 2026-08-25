@@ -15,12 +15,28 @@ import '../session/session_mode.dart';
 
 bool _isDemo(Ref ref) => ref.watch(sessionModeProvider) == SessionMode.demo;
 
-final authRepositoryProvider = Provider<AuthRepositoryBase>(
-    (ref) => _isDemo(ref) ? FakeAuthRepository() : AuthRepository());
-final submissionRepositoryProvider = Provider<SubmissionRepositoryBase>(
-    (ref) => _isDemo(ref) ? FakeSubmissionRepository() : SubmissionRepository());
-final pointsRepositoryProvider = Provider<PointsRepositoryBase>(
-    (ref) => _isDemo(ref) ? FakePointsRepository() : PointsRepository());
+// Duplicated (not imported, and named differently to avoid an import-name
+// collision in files that import both) from core/preview/preview_mode.dart
+// — that file imports this one for `previewModeOverrides`, so importing it
+// back here would create a cycle. One-line compile-time constant, safe to
+// keep in sync manually.
+const bool _kPreviewModeFlag = bool.fromEnvironment('PREVIEW_MODE');
+
+/// Auth/submissions/points now go to real Firestore for BOTH the demo
+/// account and normal accounts — only a true `kPreviewMode` build (no
+/// Firebase project at all) stays fully offline/Fake. This is what makes
+/// "Akun Testing" (Sumber) and "Akun Pengolah (Testing)" a real, shared
+/// Firebase identity that can sync live across two devices (26 Agustus
+/// 2026 feature) instead of each device's own disconnected local mock data.
+/// `partner`/`content`/Groq/Gemini stay gated on [_isDemo] as before —
+/// unrelated to the live exchange flow, no reason to require those keys
+/// just to try the testing accounts.
+final authRepositoryProvider = Provider<AuthRepositoryBase>((ref) =>
+    _kPreviewModeFlag ? FakeAuthRepository() : AuthRepository());
+final submissionRepositoryProvider = Provider<SubmissionRepositoryBase>((ref) =>
+    _kPreviewModeFlag ? FakeSubmissionRepository() : SubmissionRepository());
+final pointsRepositoryProvider = Provider<PointsRepositoryBase>((ref) =>
+    _kPreviewModeFlag ? FakePointsRepository() : PointsRepository());
 final partnerRepositoryProvider = Provider<PartnerRepositoryBase>(
     (ref) => _isDemo(ref) ? FakePartnerRepository() : PartnerRepository());
 final contentRepositoryProvider = Provider<ContentRepositoryBase>(
